@@ -28,7 +28,7 @@ class MySQLDB implements System<MySQLDB_CONFIG , HANDLER>{
     mysql.createConnection(config);
   }
 
-  async getHandler(){
+  getHandler(){
     return this.connection;
   }
 }
