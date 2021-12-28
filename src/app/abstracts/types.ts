@@ -11,6 +11,10 @@ export interface Controller {
     registerEndpoints( router:Router ):Promise<void>;
 }
 
+export interface Script {
+    run( args?:{[k:string]:any} ):Promise<void>;
+}
+
 export interface System<C,H>{
     load( config :C ) : Promise<any>;
     getHandler() : H;
