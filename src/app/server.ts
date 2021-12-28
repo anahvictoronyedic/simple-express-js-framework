@@ -22,4 +22,7 @@ bootstrap('concrete').then();
 const controllersFolderPath = path.join( __dirname , '/controllers' );
 CoreRoutines.registerControllersThroughFolderNames( app ,controllersFolderPath ).then();
 
+// at last, add the API error handler
+app.use(CoreRoutines.getApiErrorHandlerMiddleware());
+
 export default app;
