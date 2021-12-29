@@ -59,7 +59,12 @@ class ItemsController implements Controller{
         catch(err){
             
             if( err && err.reason == itemsModel.INSUFFICIENT_QUANTITY_REASON ){
-                err = createHttpError(404,'cannot sell due to insufficient number of products');
+                
+                err = createHttpError(404,'cannot sell due to insufficient number of products',{
+
+                    // indicate to the error handler, that the message can be exposed
+                    expose:true,
+                });
             }
 
             next(err);
