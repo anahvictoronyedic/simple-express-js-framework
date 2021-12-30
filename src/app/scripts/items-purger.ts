@@ -1,5 +1,5 @@
 
-import { Script } from "../abstracts/types";
+import { PLAIN_OBJECT, Script } from "../abstracts/types";
 import bootstrap from "../bootstrap";
 
 import itemsModel from "../models/items/items";
@@ -12,7 +12,7 @@ bootstrap('mini').then();
 
 export class ItemsPurger implements Script{
 
-    async run(args?: { [k: string]: any; }){
+    async run(args?: PLAIN_OBJECT){
         // clear the items that needs purging 
         itemsModel.purgeItems();
     }
@@ -21,4 +21,6 @@ export class ItemsPurger implements Script{
 const itemsPurger = new ItemsPurger;
 
 // run the script
-itemsPurger.run().then();
+itemsPurger.run().then().catch((e)=>{
+    console.error('script failed',e);
+});

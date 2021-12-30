@@ -1,9 +1,10 @@
 
 import server from './app/server';
 
-// port is now available to the Node.js runtime 
-// as if it were an environment variable
-const port = process.env.SERVER_PORT;
+/**
+ * First read the port through the standard way, then if not available, read it from .env
+ */
+const port = process.env.PORT || process.env.SERVER_PORT;
 
 // start the express server
 server.listen( port, () => {
