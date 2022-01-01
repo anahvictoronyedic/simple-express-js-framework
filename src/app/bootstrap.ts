@@ -11,17 +11,20 @@ export default async function( appLevel:'concrete'|'mini', options?:{
     mysql:MySQLDB_CONFIG,
 }){
 
+    const mysqlConfig:MySQLDB_CONFIG = {
+        host:process.env.MYSQL_HOST,
+        user:process.env.MYSQL_USER,
+        password:process.env.MYSQL_PASSWORD,
+        port:Number(process.env.MYSQL_PORT),
+        database:process.env.MYSQL_DATABASE,
+        connectionLimit:Number(appLevel === 'concrete' ? process.env.MYSQL_CONCRETE_POOL_CONNECTION_LIMIT :
+        process.env.MYSQL_MINI_POOL_CONNECTION_LIMIT),
+        multipleStatements:true,
+    };
+
     options = merge({
-        mysql:{
-            host:process.env.MYSQL_HOST,
-            user:process.env.MYSQL_USER,
-            password:process.env.MYSQL_PASSWORD,
-            port:Number(process.env.MYSQL_PORT),
-            database:process.env.MYSQL_DATABASE,
-            connectionLimit:Number(appLevel == 'concrete' ? process.env.MYSQL_CONCRETE_POOL_CONNECTION_LIMIT : 
-            process.env.MYSQL_MINI_POOL_CONNECTION_LIMIT),
-        } as MySQLDB_CONFIG,
+        mysql:mysqlConfig,
     } , options);
-    
+
     await mySqlDb.load(options.mysql);
 };

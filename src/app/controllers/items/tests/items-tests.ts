@@ -6,23 +6,32 @@ import itemsModel from "../../../models/items/items";
 import { ItemsController } from "../items";
 import TestUtils from "../../../services/test-utils";
 
+// do priliminary setup for unit test
 TestUtils.setupEnvForUnitTests();
 
 describe('test items controller',()=>{
 
+    /**
+     * creates a fake normalized req object that will be used for testing. Normalized means all required key value have been
+     * populated in the req object.
+     * @param req the callees format of the fake request object that should be normalized
+     * @returns a normalized req object that should be used
+     */
     const createFakeReqObject = (req:PLAIN_OBJECT) => TestUtils.createFakeReqObject( merge({
         params:{
             slug:'foo',
         }
     },req) );
 
-    let res:any , itemsController:ItemsController,sandbox:Sinon.SinonSandbox,error:Error;
+    let res:any ;
+    let itemsController:ItemsController;
+    let sandbox:Sinon.SinonSandbox;
+    let error:Error;
 
     before(()=>{
-        
-        itemsController = new ItemsController;
+        itemsController = new ItemsController();
     })
-    beforeEach(function () {
+    beforeEach( ()=> {
 
         sandbox = Sinon.createSandbox();
 
@@ -35,13 +44,13 @@ describe('test items controller',()=>{
         };
     });
 
-    afterEach(function () {
+    afterEach( ()=> {
         // completely restore all fakes created through the sandbox
         sandbox.restore();
     });
 
     describe('test add middleware',async ()=>{
-        
+
         const req = createFakeReqObject( {
             body:{
                 quantity:10,
@@ -58,7 +67,7 @@ describe('test items controller',()=>{
         .onSecondCall().rejects(error);
 
         it('should call res.status(200).end() when item added successfully',()=>{
-                        
+
             itemsController.add( req , res as Response , ()=>{} );
 
             chai.expect(itemsModel.addItemQuantity).to.be.calledOnce;
@@ -68,7 +77,7 @@ describe('test items controller',()=>{
         });
 
         it('should call the middleware next function when item fails to get added by the model',()=>{
-                            
+
             const nextFunction = sandbox.spy();
 
             itemsController.add( req , res as Response , nextFunction );
@@ -79,7 +88,7 @@ describe('test items controller',()=>{
     });
 
     describe('test sell middleware',async ()=>{
-        
+
         const req = createFakeReqObject( {
             body:{
                 quantity:10,
@@ -100,7 +109,7 @@ describe('test items controller',()=>{
         });
 
         it('should call res.status(200).end() when item sale is successful in the model',()=>{
-                    
+
             itemsController.add( req , res as Response , ()=>{} );
             chai.expect(itemsModel.sellItem).to.be.calledOnce;
             chai.expect(res.status).to.be.calledOnceWithExactly(200);
@@ -109,7 +118,7 @@ describe('test items controller',()=>{
         });
 
         it('should call the middleware next function when an item fails to be sold',()=>{
-            
+
             const nextFunction = sandbox.spy();
 
             itemsController.add( req , res as Response , nextFunction );
@@ -118,7 +127,7 @@ describe('test items controller',()=>{
         });
 
         it('should call the middleware next function with object that must have {statusCode:404} set, when no items found to be sold',()=>{
-                        
+
             const nextFunction = sandbox.spy();
 
             itemsController.add( req , res as Response , nextFunction );
@@ -128,9 +137,9 @@ describe('test items controller',()=>{
             }));
         });
     });
-    
+
     describe('test get middleware',async ()=>{
-        
+
         const req = createFakeReqObject( {
             body:{
             }
@@ -150,7 +159,7 @@ describe('test items controller',()=>{
         .onSecondCall().rejects(error);
 
         it('should call res.status(200).json(result) when data is fetched successfully from the model',()=>{
-                
+
             itemsController.get( req , res as Response , ()=>{} );
 
             chai.expect(itemsModel.getItemQuantity).to.be.calledOnce;

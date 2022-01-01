@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS items(
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-    UNIQUE KEY ( slug ) ,
+    UNIQUE KEY ( slug ) 
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS items_quantities(
@@ -19,8 +19,8 @@ CREATE TABLE IF NOT EXISTS items_quantities(
 
     expiry DATETIME NOT NULL,
 
-    obsolete BOOLEAN NOT NULL DEFAULT FALSE,
-    
+    obsolete BOOLEAN NOT NULL DEFAULT FALSE ,
+
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
@@ -28,3 +28,68 @@ CREATE TABLE IF NOT EXISTS items_quantities(
 
     INDEX( quantity , expiry , obsolete )
 ) ENGINE=InnoDB;
+
+DELIMITER $$
+DROP PROCEDURE IF EXISTS sell_by_quantity$$
+CREATE PROCEDURE sell_by_quantity( IN _item_id INT(11) , IN _quantity INT(11) , OUT compute_success BOOLEAN )
+BEGIN
+
+    DECLARE quantity_sum INT DEFAULT 0;
+    DECLARE row_quantity INT;
+    DECLARE item_quantity_id INT(11);
+    DECLARE noop BOOLEAN DEFAULT FALSE;
+
+    DECLARE sell_row_cur CURSOR FOR
+        SELECT id,quantity FROM items_quantities WHERE item_id = _item_id AND expiry > CURRENT_TIMESTAMP AND obsolete = FALSE ORDER BY expiry ASC FOR UPDATE;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION, SQLWARNING
+        BEGIN
+            ROLLBACK;
+            RESIGNAL;
+        END;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND
+        BEGIN
+            SET noop = TRUE;
+        END;
+    
+    START TRANSACTION;
+
+    OPEN sell_row_cur;
+
+    SET compute_success = FALSE;
+
+    compute_loop : LOOP
+
+        FETCH NEXT FROM sell_row_cur INTO item_quantity_id,row_quantity;
+
+        IF noop = TRUE THEN
+            LEAVE compute_loop;
+        ELSE
+
+            SET quantity_sum = quantity_sum + row_quantity;
+
+            IF quantity_sum <= _quantity THEN
+                UPDATE items_quantities SET obsolete = TRUE WHERE id = item_quantity_id;
+            ELSE
+                UPDATE items_quantities SET quantity = quantity_sum - _quantity WHERE id = item_quantity_id;
+
+                SET compute_success = TRUE;
+
+                LEAVE compute_loop;
+            END IF;
+
+        END IF;
+
+    END LOOP compute_loop;
+
+    CLOSE sell_row_cur;
+
+    IF compute_success = FALSE THEN
+        ROLLBACK;
+    ELSE
+        COMMIT;
+    END IF;
+
+END $$
+DELIMITER ;

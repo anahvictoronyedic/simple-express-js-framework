@@ -9,6 +9,8 @@ export default class CoreRoutines{
     static getApiErrorHandlerMiddleware():ErrorRequestHandler{
         return ( err:any , req:Request , res:Response , next:NextFunction )=>{
 
+            console.log('error : ',err);
+
             if(res.headersSent){
                 return next(err);
             }
@@ -22,7 +24,7 @@ export default class CoreRoutines{
             // from the http-errors library
             ( err && err.expose )
 
-            || process.env.NODE_ENV != 'production' ) {
+            || process.env.NODE_ENV !== 'production' ) {
                 result.message = err.message ;
             }
 
@@ -31,7 +33,7 @@ export default class CoreRoutines{
     }
 
     static async registerControllersThroughFolderNames( app:Application , parentFolderPath:string ){
-                
+
         const controllerNames = fs.readdirSync(parentFolderPath, { withFileTypes: true })
         .filter(dirent => dirent.isDirectory())
         .map(dirent => dirent.name);
@@ -40,7 +42,7 @@ export default class CoreRoutines{
 
             if( !Constants.SLUG_REGEX.test(controllerName) ) throw new Error(`failed to load controller ( ${controllerName} ) in ( ${parentFolderPath} ) because it is not in slug format due to invalid characters`);
 
-            const controller:Controller = require( path.join( parentFolderPath , controllerName , `${controllerName}.js` ) );
+            const controller:Controller = require( path.join( parentFolderPath , controllerName , `${controllerName}.js` ) ).default;
 
             const router = express.Router();
 

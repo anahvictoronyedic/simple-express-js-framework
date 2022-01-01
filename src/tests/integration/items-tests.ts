@@ -1,40 +1,45 @@
 import { expect } from "chai";
-import mySqlDb from "../../../../app/datastore/mysql-db";
-import app from "../../../../app/server";
-import TestUtils from "../../../../app/services/test-utils";
+import mySqlDb from "../../app/datastore/mysql-db";
+import app from "../../app/server";
+import TestUtils from "../../app/services/test-utils";
 import util from 'util';
-import Constants from "src/app/abstracts/constants";
+import Constants from "../../app/abstracts/constants";
 
 TestUtils.setupEnvForIntegrationTests();
 
 const defaultTestSlug = 'foo';
 const createUrl = ( urlSuffix:string ) => `/items/${defaultTestSlug}/${urlSuffix}`;
 
-const queryFunction = util.promisify( mySqlDb.getHandler().query) ;
+const handler = mySqlDb.getHandler();
+const queryFunction = util.promisify( handler.query) 
+// NOTE: this is ugly, util.promisify should allow context to be defined. A better solution is needed.
+.bind(handler);
+
 const resetDB = async ()=>{
     return queryFunction({
         sql:`
-        DELETE FROM ${Constants.itemsQuantitiesTableName} 
+        DELETE FROM ${Constants.itemsQuantitiesTableName}
         WHERE item_id = ( SELECT id from ${Constants.itemsTableName} WHERE slug = ? )`,
         values:[defaultTestSlug]
     });
 };
+
 const addItem = async (quantity:number , expiry:number)=>{
     return queryFunction({
-        sql:`INSERT INTO ${Constants.itemsQuantitiesTableName}(item_id,quantity,expiry) 
+        sql:`INSERT INTO ${Constants.itemsQuantitiesTableName}(item_id,quantity,expiry)
         VALUES(( SELECT id from ${Constants.itemsTableName} WHERE slug = ? ) , ? , ? )`,
         values:[defaultTestSlug,quantity , expiry],
     })
 };
 
 describe('test items api endpoint',()=>{
-   
+
     describe('test add endpoint',async ()=>{
 
         beforeEach(async ()=>{
             await resetDB();
         });
-    
+
         it('should respond with status 200',async (done)=>{
 
             chai.request(app)
@@ -56,7 +61,7 @@ describe('test items api endpoint',()=>{
 
         beforeEach(async ()=>{
             await resetDB();
-        });    
+        });
 
         it('should respond with status 200 when an unexpired quantity of item is sold',async (done)=>{
 
@@ -76,8 +81,8 @@ describe('test items api endpoint',()=>{
                 done();
             });
         });
-        
-        it('should respond with status 403 when the quantity of item requested for sale is unavailable',async (done)=>{
+
+        it('should respond with status 404 when the quantity of item requested for sale is unavailable',async (done)=>{
 
             const now = Date.now();
 
@@ -90,24 +95,25 @@ describe('test items api endpoint',()=>{
             })
             .end(function(err,res){
                 expect(err).to.be.null;
-                expect(res).to.have.status(403);
+                expect(res).to.have.status(404);
 
                 done();
             });
         });
     });
-    
+
     describe('test get endpoint',async ()=>{
 
         beforeEach(async ()=>{
             await resetDB();
-        });    
+        });
 
         it('should respond with status 200 and valid result in a simple case',async (done)=>{
 
             const now = Date.now();
 
-            const quantity = 10 , validTill = now + 10000;
+            const quantity = 10 ;
+            const validTill = now + 10000;
 
             await addItem( quantity , validTill);
 
@@ -149,12 +155,14 @@ describe('test items api endpoint',()=>{
                 done();
             });
         });
-        
+
         it('should respond with status 200 and valid result in an extreme case',async (done)=>{
 
             const now = Date.now();
 
-            const timeDelta = 10000 ,midTimeDelta =timeDelta+10000 , lastTimeDelta = timeDelta + 8000;
+            const timeDelta = 10000 ;
+            const midTimeDelta =timeDelta+10000 ;
+            const lastTimeDelta = timeDelta + 8000;
 
             /**
              * Test extreme usecase whereby different entries of quantities and expiry exist in database.
