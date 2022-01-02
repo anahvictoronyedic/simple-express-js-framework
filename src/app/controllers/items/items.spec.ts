@@ -1,10 +1,10 @@
 import { merge } from "lodash";
 import { Response } from "express";
 import Sinon from "sinon";
-import { PLAIN_OBJECT } from "../../../abstracts/types";
-import itemsModel from "../../../models/items/items";
-import { ItemsController } from "../items";
-import TestUtils from "../../../services/test-utils";
+import { PLAIN_OBJECT } from "../../abstracts/types";
+import TestUtils from "../../services/test-utils";
+import ItemsModel from "../../models/items/items";
+import ItemsController from "./items";
 
 // do priliminary setup for unit test
 TestUtils.setupEnvForUnitTests();
@@ -24,23 +24,25 @@ describe('test items controller',()=>{
     },req) );
 
     let res:any ;
-    let itemsController:ItemsController;
     let sandbox:Sinon.SinonSandbox;
     let error:Error;
 
-    before(()=>{
-        itemsController = new ItemsController();
-    })
+    const itemsModel = new ItemsModel();
+    const itemsController = new ItemsController(itemsModel);
+
     beforeEach( ()=> {
 
         sandbox = Sinon.createSandbox();
 
         error = new Error();
 
+        const endSpy = sandbox.spy();
+        const jsonSpy = sandbox.spy();
+
         res = {
-            json:sandbox.spy(),
-            end:sandbox.spy(),
-            status:sandbox.stub().returns({end:sandbox.spy(),json:sandbox.spy()}),
+            json:jsonSpy,
+            end:endSpy,
+            status:sandbox.stub().returns({end:endSpy,json:jsonSpy}),
         };
     });
 

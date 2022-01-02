@@ -1,14 +1,17 @@
 
 import { ID } from "../../abstracts/types";
-import mySqlDb from "../../datastore/mysql-db";
 import util from 'util';
 import Constants from "../../abstracts/constants";
+import CoreRoutines from "../../services/core-routines/core-routines";
+import MySQLDB from "../../datastore/mysql-db";
 
-class ItemsModel{
+export default class ItemsModel{
 
     public readonly INSUFFICIENT_QUANTITY_REASON = 'insufficient-item-quantity';
 
-    private readonly dbHandler = mySqlDb.getHandler() ;
+    private mySqlDb = CoreRoutines.getObjectSafely<MySQLDB>( Constants.GLOBAL_OBJECT_KEYS.system.mysql );
+
+    private readonly dbHandler = this.mySqlDb.getHandler();
 
     private readonly queryFunction = util.promisify(this.dbHandler.query)
     // NOTE: this is ugly, util.promisify should allow context to be defined. A better solution is needed.
@@ -105,7 +108,3 @@ class ItemsModel{
         return typeof idOrSlug !== 'number';
     }
 }
-
-const itemsModel = new ItemsModel();
-
-export default itemsModel;

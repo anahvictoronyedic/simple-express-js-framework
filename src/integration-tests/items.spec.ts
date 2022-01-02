@@ -1,17 +1,19 @@
 import { expect } from "chai";
-import mySqlDb from "../../app/datastore/mysql-db";
-import app from "../../app/server";
-import TestUtils from "../../app/services/test-utils";
+import app from "../app/server";
+import TestUtils from "../app/services/test-utils";
 import util from 'util';
-import Constants from "../../app/abstracts/constants";
+import Constants from "../app/abstracts/constants";
+import CoreRoutines from "../app/services/core-routines/core-routines";
+import MySQLDB from "../app/datastore/mysql-db";
 
 TestUtils.setupEnvForIntegrationTests();
 
 const defaultTestSlug = 'foo';
 const createUrl = ( urlSuffix:string ) => `/items/${defaultTestSlug}/${urlSuffix}`;
 
+const mySqlDb = CoreRoutines.getObjectSafely<MySQLDB>( Constants.GLOBAL_OBJECT_KEYS.system.mysql );
 const handler = mySqlDb.getHandler();
-const queryFunction = util.promisify( handler.query) 
+const queryFunction = util.promisify(handler.query) 
 // NOTE: this is ugly, util.promisify should allow context to be defined. A better solution is needed.
 .bind(handler);
 
@@ -161,7 +163,7 @@ describe('test items api endpoint',()=>{
             const now = Date.now();
 
             const timeDelta = 10000 ;
-            const midTimeDelta =timeDelta+10000 ;
+            const midTimeDelta = timeDelta + 10000 ;
             const lastTimeDelta = timeDelta + 8000;
 
             /**

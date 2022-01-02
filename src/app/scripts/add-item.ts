@@ -9,14 +9,17 @@ bootstrap('mini').then();
 import { isString } from "lodash";
 import Constants from "../abstracts/constants";
 import { PLAIN_OBJECT, Script } from "../abstracts/types";
-import mySqlDb from "../datastore/mysql-db";
 import util from "util";
+import MySQLDB from "../datastore/mysql-db";
+import CoreRoutines from "../services/core-routines/core-routines";
 
 export class AddItem implements Script{
 
+    private mySqlDb = CoreRoutines.getObjectSafely<MySQLDB>( Constants.GLOBAL_OBJECT_KEYS.system.mysql );
+
     async run(args?: PLAIN_OBJECT){
 
-        const handler = mySqlDb.getHandler();
+        const handler = this.mySqlDb.getHandler();
 
         const slug = args.slug;
         if( !isString(slug) ) throw new Error('cannot add item due to invalid slug');
