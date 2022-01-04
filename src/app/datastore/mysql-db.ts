@@ -7,10 +7,9 @@ export type MySQLDB_CONFIG =  (mysql.PoolConfig | mysql.ConnectionConfig);
 type HANDLER = mysql.Connection|mysql.Pool;
 
 export default class MySQLDB implements SubSystem<MySQLDB_CONFIG , HANDLER>{
-
   private connection:HANDLER;
 
-  async load(config:MySQLDB_CONFIG) {
+  async init(config:MySQLDB_CONFIG) {
 
     this.connection = 'connectionLimit' in config && typeof config.connectionLimit === 'number' ?
 

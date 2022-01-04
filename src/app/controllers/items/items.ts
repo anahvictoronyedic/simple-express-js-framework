@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response, Router } from "express";
 import Defense from "../../services/defense";
 import { Controller } from "../../abstracts/types";
-import itemsModel from "../../models/items/items";
 import Joi from "joi";
 import Constants from "../../abstracts/constants";
 import createHttpError from "http-errors";
@@ -9,13 +8,15 @@ import { pick } from "lodash";
 import ItemsModel from "../../models/items/items";
 import CoreRoutines from "../../services/core-routines/core-routines";
 
-export default class ItemsController implements Controller{
+export default class ItemsController implements Controller<any>{
 
     private itemsModel:ItemsModel;
 
-    public constructor(itemsModel?:ItemsModel){
-        this.itemsModel = itemsModel || 
-        CoreRoutines.getObjectSafely<ItemsModel>( Constants.GLOBAL_OBJECT_KEYS.system.mysql );
+    public constructor(){
+    }
+
+    async init(config: any){
+        this.itemsModel = CoreRoutines.getObjectSafely<ItemsModel>( Constants.GLOBAL_OBJECT_KEYS.model.items );
     }
 
     async registerEndpoints(router: Router): Promise<void> {
@@ -27,13 +28,13 @@ export default class ItemsController implements Controller{
         router.post( '/:slug/add' ,slugValidatorMiddleware,await Defense.createMiddlewareForJoiValidation( Joi.object({
             quantity:Joi.number().required().integer().positive(),
             expiry:Joi.number().required().integer().positive(),
-        }) , 'body' ), this.add);
+        }) , 'body' ), this.add.bind(this));
 
         router.post( '/:slug/sell' ,slugValidatorMiddleware,await Defense.createMiddlewareForJoiValidation( Joi.object({
             quantity:Joi.number().required().integer().positive(),
-        }), 'body' ) , this.sell);
+        }), 'body' ) , this.sell.bind(this));
 
-        router.get( '/:slug/quantity' ,slugValidatorMiddleware, this.get );
+        router.get( '/:slug/quantity' ,slugValidatorMiddleware, this.get.bind(this) );
     }
 
     public async add(req:Request , res:Response , next:NextFunction){
