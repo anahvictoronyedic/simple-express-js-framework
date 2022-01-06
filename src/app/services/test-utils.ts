@@ -11,7 +11,7 @@ import Sinon from "sinon";
 
 export default class TestUtils{
 
-    static createFakeReqObject(req?:PLAIN_OBJECT){
+    static createFakeReqObject(req:PLAIN_OBJECT = {}){
         return req as unknown as Request;
     }
 

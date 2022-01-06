@@ -9,9 +9,12 @@ export default abstract class Constants{
     static readonly SLUG_REGEX = /^[a-z](-?[a-z])*$/;
 
     static readonly itemsTableName = 'items';
-
     static readonly itemsQuantitiesTableName = 'items_quantities';
 
+    /**
+     * These keys are for the app object store. They are defined here to make the code DRY, so that when a key
+     * is marked for change, there wont be need to go through all parts of the application.
+     */
     static GLOBAL_OBJECT_KEYS = {
         controller : {
             items : 'app.controller.items',

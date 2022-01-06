@@ -34,7 +34,6 @@ TestUtils.setupEnvForUnitTests().then((result)=>{
         let error:Error;
 
         let itemsModel:Sinon.SinonStubbedInstance<ItemsModel>;
-    
         let itemsController:ItemsController;
 
         before( ()=> {
@@ -47,6 +46,7 @@ TestUtils.setupEnvForUnitTests().then((result)=>{
 
             const objectStoreStub = Sinon.stub(CoreRoutines.objectStore);
             
+            // Stub the app object store ( get and has methods ) to always return this fake model.
             objectStoreStub.get.withArgs(Constants.GLOBAL_OBJECT_KEYS.model.items)
             .returns( itemsModel );
             objectStoreStub.has.withArgs(Constants.GLOBAL_OBJECT_KEYS.model.items)
@@ -86,7 +86,7 @@ TestUtils.setupEnvForUnitTests().then((result)=>{
         
             it('should respond with status 200 and end the connection when item added successfully',sinonTest( async function (){
 
-                const stub = itemsModel.addItemQuantity.resolves();
+                itemsModel.addItemQuantity.resolves();
 
                 await itemsController.add( req , res as Response , ()=>{} );
 
@@ -94,13 +94,11 @@ TestUtils.setupEnvForUnitTests().then((result)=>{
                 chai.expect(res.status).to.be.calledOnceWithExactly(200);
                 chai.expect(res.status).to.be.calledBefore(res.end);
                 chai.expect(res.end).to.be.calledOnce;
-
-                stub.resetHistory();
             }));
 
             it('should call the middleware next function when item fails to get added by the model',sinonTest( async function (){
 
-                const stub = itemsModel.addItemQuantity.rejects(error);
+                itemsModel.addItemQuantity.rejects(error);
 
                 const nextFunction = this.spy();
 
@@ -108,8 +106,6 @@ TestUtils.setupEnvForUnitTests().then((result)=>{
 
                 chai.expect(itemsModel.addItemQuantity).to.be.calledOnce;
                 chai.expect(nextFunction).to.be.calledOnceWith(error);
-
-                stub.resetHistory();
             }));
         });
 
@@ -127,33 +123,31 @@ TestUtils.setupEnvForUnitTests().then((result)=>{
         
             it('should respond with status 200 and end the connection when item sale is successful in the model',sinonTest( async function (){
 
-                const stub = itemsModel.sellItem.resolves();
+                itemsModel.sellItem.resolves();
 
                 await itemsController.sell( req , res as Response , ()=>{} );
                 chai.expect(itemsModel.sellItem).to.be.calledOnce;
                 chai.expect(res.status).to.be.calledOnceWithExactly(200);
                 chai.expect(res.status).to.be.calledBefore(res.end);
                 chai.expect(res.end).to.be.calledOnce;
-
-                stub.resetHistory();
             }));
 
             it('should call the middleware next function when an item fails to be sold',sinonTest( async function (){
 
-                const stub = itemsModel.sellItem.rejects(error);
+                itemsModel.sellItem.rejects(error);
 
                 const nextFunction = this.spy();
 
                 await itemsController.sell( req , res as Response , nextFunction );
                 chai.expect(itemsModel.sellItem).to.be.calledOnce;
                 chai.expect(nextFunction).to.be.calledOnceWith(error);
-
-                stub.resetHistory();
             }));
 
             it('should call the middleware next function with object that must have {statusCode:404} set, when no items found to be sold', sinonTest( async function (){
 
-                const stub = itemsModel.sellItem.rejects({
+                // the model sell method rejects with insufficient quantity reason, when enough items 
+                // are not found for sale. This stub fakes that behavior
+                itemsModel.sellItem.rejects({
                     reason : itemsModel.INSUFFICIENT_QUANTITY_REASON,
                 });
 
@@ -164,8 +158,6 @@ TestUtils.setupEnvForUnitTests().then((result)=>{
                 chai.expect(nextFunction).to.be.calledOnceWith(Sinon.match({
                     statusCode:404,
                 }));
-
-                stub.resetHistory();
             }));
         });
 
@@ -187,7 +179,7 @@ TestUtils.setupEnvForUnitTests().then((result)=>{
         
             it('should respond with status 200 and result as json when data is fetched successfully from the model', sinonTest( async function (){
     
-                const stub = itemsModel.getItemQuantity.resolves(result);
+                itemsModel.getItemQuantity.resolves(result);
 
                 await itemsController.get( req , res as Response , ()=>{} );
 
@@ -195,13 +187,11 @@ TestUtils.setupEnvForUnitTests().then((result)=>{
                 chai.expect(res.status).to.be.calledOnceWithExactly(200);
                 chai.expect(res.status).to.be.calledBefore(res.json);
                 chai.expect(res.json).to.be.calledOnceWithExactly(Sinon.match(result));
-
-                stub.resetHistory();
             }));
 
             it('should call middleware next function when data fetch from model fails',sinonTest( async function (){
     
-                const stub = itemsModel.getItemQuantity.rejects(error);
+                itemsModel.getItemQuantity.rejects(error);
 
                 const nextFunction = this.spy();
 
@@ -209,8 +199,6 @@ TestUtils.setupEnvForUnitTests().then((result)=>{
 
                 chai.expect(itemsModel.getItemQuantity).to.be.calledOnce;
                 chai.expect(nextFunction).to.be.calledOnceWith(error);
-
-                stub.resetHistory();
             }));
         });
     });

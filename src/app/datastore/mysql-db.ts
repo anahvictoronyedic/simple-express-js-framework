@@ -6,7 +6,11 @@ export type MySQLDB_CONFIG =  (mysql.PoolConfig | mysql.ConnectionConfig);
 
 type HANDLER = mysql.Connection|mysql.Pool;
 
+/**
+ * This class interfaces the mysql server to various parts of the application.
+ */
 export default class MySQLDB implements SubSystem<MySQLDB_CONFIG , HANDLER>{
+
   private connection:HANDLER;
 
   async init(config:MySQLDB_CONFIG) {

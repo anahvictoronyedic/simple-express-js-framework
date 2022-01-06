@@ -20,7 +20,7 @@ TestUtils.setupEnvForUnitTests().then((result)=>{
 
     sinonTest = result.sinonTest;
 
-    describe('test core-routines services',()=>{
+    describe('test core-routines service',()=>{
 
         let res:any ;
         let error:Error;
@@ -45,6 +45,7 @@ TestUtils.setupEnvForUnitTests().then((result)=>{
 
         describe('test callback returned from getApiErrorHandlerMiddleware()',()=>{
 
+            // get the error handling middleware
             const returnedCallback = CoreRoutines.getApiErrorHandlerMiddleware();
 
             const fakeReqObject = TestUtils.createFakeReqObject( {
@@ -129,7 +130,9 @@ TestUtils.setupEnvForUnitTests().then((result)=>{
                 name : `${consideredControllerSlug}${name}`,
             }) ) as unknown as Dirent[];
 
-            const fakeExpressRouter = express.Router();
+            const fakeExpressRouter = {
+                use:()=>{},
+            };
 
             const folderPath ={controller: process.env.APP_CONTROLLERS_PATH,model:process.env.APP_MODELS_PATH};
 
@@ -157,6 +160,7 @@ TestUtils.setupEnvForUnitTests().then((result)=>{
                 routerStub : Sinon.SinonStub , controllerInitStub: Sinon.SinonStub,modelInitStub: Sinon.SinonStub,
                 objectStoreStubbable : Sinon.SinonStubbedInstance<Map<any,any>> } ;
 
+            // this function makes the code DRY.
             const testFlow = async function(cb: ( stubs:CallbackStubsArgType )=>Promise<void> ) {
 
                 const objectStoreStubbable = this.stub(CoreRoutines.objectStore);
@@ -202,6 +206,7 @@ TestUtils.setupEnvForUnitTests().then((result)=>{
                     const modelObjectStoreKey = Constants.GLOBAL_OBJECT_KEYS.model[consideredControllerSlug];
                     const controllerObjectStoreKey = Constants.GLOBAL_OBJECT_KEYS.controller[consideredControllerSlug];
 
+                    // object store set method should be called twice, once of model and the other for controller.
                     chai.expect(stubs.objectStoreStubbable.set.getCall(0)).to.be.calledWith( modelObjectStoreKey , Sinon.match.any );
                     chai.expect(stubs.objectStoreStubbable.set.getCall(1)).to.be.calledWith( controllerObjectStoreKey , Sinon.match.any );
                 });

@@ -20,6 +20,7 @@ export default class ItemsModel implements Model<any>{
 
         const dbHandler = this.mySqlDb.getHandler();
 
+        // promisify the function to make it thenable.
         this.queryFunction = util.promisify(dbHandler.query)
         // NOTE: this is ugly, util.promisify should allow context to be defined. A better solution is needed.
         .bind(dbHandler);
@@ -32,8 +33,9 @@ export default class ItemsModel implements Model<any>{
 
         const query = `
         SET ${mySqlResultVariableName} := FALSE;
-        ${ this.isIdASlug(idOrSlug) ? this.getIdQueryFragment(idOrSlug , mySqlItemIdVariableName) : `SET ${mySqlItemIdVariableName} := ?` };
-        CALL sell_by_quantity( ${mySqlItemIdVariableName} , ? , ${mySqlResultVariableName} );
+        ${ this.isIdASlug(idOrSlug) ? this.getIdQueryFragment(idOrSlug , mySqlItemIdVariableName) : `SET ${mySqlItemIdVariableName} := ?` };`
+        // call the mysql procedure
+        +`CALL sell_by_quantity( ${mySqlItemIdVariableName} , ? , ${mySqlResultVariableName} );
         SELECT ${mySqlResultVariableName};`;
 
         return this.queryFunction({
@@ -58,7 +60,10 @@ export default class ItemsModel implements Model<any>{
 
         const query = `
         INSERT INTO ${Constants.itemsQuantitiesTableName}( item_id , quantity , expiry )
-        VALUES( ${this.getIdQueryFragment(idOrSlug)} , ? , FROM_UNIXTIME(? * 0.001) ) `;
+        VALUES( ${this.getIdQueryFragment(idOrSlug)} , ? , `+
+        // convert from milliseconds to seconds by mutiplying with 0.001
+        `FROM_UNIXTIME(? * 0.001) `
+        +`) `;
 
         return this.queryFunction({
             sql:query,
