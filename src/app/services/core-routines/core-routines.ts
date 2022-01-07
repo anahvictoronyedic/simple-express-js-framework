@@ -7,11 +7,11 @@ export default class CoreRoutines{
 
     public static readonly objectStore = new Map<string,any>();
     /**
-     * 
+     *
      * @param key The key for the object
      * @returns The Object
-     * 
-     * This methods makes the code defensive and callers that critically need the object dont need to test if null. 
+     *
+     * This methods makes the code defensive and callers that critically need the object dont need to test if null.
      * If the object is not in the store and exception is thrown.
      */
     public static getObjectSafely<R>( key:string ){
@@ -30,8 +30,8 @@ export default class CoreRoutines{
     }
 
     /**
-     * 
-     * @returns Error handler middleware, which in most cause should be registered last in express 
+     *
+     * @returns Error handler middleware, which in most cause should be registered last in express
      * middleware pipeline.
      */
     static getApiErrorHandlerMiddleware():ErrorRequestHandler{
@@ -67,18 +67,18 @@ export default class CoreRoutines{
      * This code does heavy lifting of
      * 1) instantiating controllers and models
      * 2) linking the controllers endpoints to the express app
-     * 
+     *
      * When a new folder is created the folder that contains all controllers. This method automatically links it to the rest of the application.
-     * 
+     *
      * A controller folder MUST have its name is slug format and it MUST contain a typescript file that has its name the same with the controller folder name.
-     * 
+     *
      * Lets say
      * (parentControllerPath) - is the folder that contains all controllers.
      * (parentModelPath) - is the folder that contains all models.
      * if (parentControllerPath/schools) is a folder. Then schools is a controller name.
      * (parentControllerPath/schools/schools.ts) must be a file that by default exports a class that implements the controller interface.
      * (parentModelPath/schools/schools.ts) must be a file that by default exports a class that implements the model interface.
-     * 
+     *
      * @param app The express application
      * @param folderPath An object that contains both root controllers and root models path.
      */
@@ -109,7 +109,7 @@ export default class CoreRoutines{
             // instantiate the model before the controller
             const modelInstance = new ModelClass();
             await modelInstance.init();
-            this.objectStore.set(modelObjectKeys[controllerName] , modelInstance ); 
+            this.objectStore.set(modelObjectKeys[controllerName] , modelInstance );
 
             // instantiate the controller
             const controllerInstance = new ControllerClass();

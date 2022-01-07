@@ -24,13 +24,13 @@ let boostrapState:'loading'|'loaded'|'error';
 const boostrapper = async function( appLevel:'concrete'|'mini', options?:{
     mysql:MySQLDB_CONFIG,
 }){
-    
+
     if( boostrapState != undefined ) return;
 
     return (async ()=>{
 
         boostrapState = 'loading';
-            
+
         const mysqlConfig:MySQLDB_CONFIG = {
             host:process.env.MYSQL_HOST,
             user:process.env.MYSQL_USER,
