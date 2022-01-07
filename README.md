@@ -9,17 +9,35 @@ The bootstrap program can be asked to load as much resources available, mostly w
 2) There is a global object store, used for dependency injection.
 3) Controllers and models are loaded and linked to the application automatically.
 4) Files that reside in the `./src/app/scripts` are called scripts files and can be run directly using `ts-node`. See below for detailed information about the scripts.
+5) The boostrap program can be run in different modes, which it uses for proper amount of resource allocation. There are two modes currently, concrete and mini. Concrete means the application will use as much resources available which is suitable for express server and mini means it will use little resources which is suitable for scripts and integration testing.
 
 ## Installation and Usage
 
 Below are the steps to get the server running.
 
-1) Create a table for the application in your mysql server.
-2) Implement the `.env` file by copying the `.env.sample` file and setting required configuration.
-3) Make sure `tsc` and `ts-node` are installed globally
-4) `npm run tsc` will compile the application into a `/dist` folder
-5) `node .` will run the `/dist/index.js` 
-6) The items endpoints can be accessed by prefixing the url with `/items`. For example to access the sell endpoint use the url `/items/:slug/sell`
+1) Implement the `.env` file by copying the `.env.sample` file and setting required configuration. For MySql database settings see below.
+2) Make sure `tsc` and `ts-node` are installed globally
+3) `npm run tsc` will compile the application into a `/dist` folder
+4) `node .` will run the `/dist/index.js` 
+5) The items endpoints can be accessed by prefixing the url with `/items`. For example to access the sell endpoint use the url `/items/:slug/sell`
+
+## MySql Database
+
+For performance reasons the application will use a pool of connections as various parts of the application accesses the database. The database configuration should be set in the .env file. Below is an explanation for various settings.
+
+`MYSQL_CONCRETE_POOL_CONNECTION_LIMIT` : This is the number of connections that should be in the pool when the application is running in concrete mode. Any number from 6 - 12 is suitable.
+
+`MYSQL_MINI_POOL_CONNECTION_LIMIT` : This is the number of connections that should be in the pool when the application is running in mini mode. Any number from 2 - 4 is suitable.
+
+`MYSQL_HOST` : The hostname of the mysql server.
+
+`MYSQL_PORT` : The mysql server port
+
+`MYSQL_USER` : The access username
+
+`MYSQL_PASSWORD` : The access password
+
+`MYSQL_DATABASE`: The database name
 
 ## Scripts
 
