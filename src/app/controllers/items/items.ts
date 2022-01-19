@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response, Router } from "express";
+import { NextFunction, Request, RequestHandler, Response, Router } from "express";
 import Defense from "../../services/defense";
 import { Controller } from "../../abstracts/types";
 import Joi from "joi";
@@ -23,25 +23,54 @@ export default class ItemsController implements Controller<any>{
     }
 
     /**
+     * @returns an array of middlewares that comes before all endpoints registered in this controller.
+     */
+    private async getCommonMiddlewares():Promise<RequestHandler[]>{
+        
+        const slugValidatorMiddleware = await Defense.createMiddlewareForJoiValidation( Joi.object({
+            slug:Joi.string().required().regex(Constants.SLUG_REGEX),
+        }) , 'params' );
+
+        // a middleware the runs to check if a slug passed in the request exists in the database
+        const slugDBExistenceVerificationMiddleware = async ( req:Request , res:Response , next:NextFunction )=>{
+
+            const slug = req.params.slug;
+
+            /**
+             * FEATURE REQUEST: Caching should be done here to improve performance
+             */
+            if( await this.itemsModel.itemExists(slug) ){
+                next();
+                return;
+            }
+
+            next( createHttpError( 400 , `The slug(${slug}) does not exists` , {
+                // indicate to the error handler, that the message can be exposed
+                expose:true,
+            } ) );
+        };
+
+        return [slugValidatorMiddleware , slugDBExistenceVerificationMiddleware ];
+    }
+
+    /**
      *
      * @param router The express router to register endpoints and middlewares
      */
     async registerEndpoints(router: Router): Promise<void> {
 
-        const slugValidatorMiddleware = await Defense.createMiddlewareForJoiValidation( Joi.object({
-            slug:Joi.string().required().regex(Constants.SLUG_REGEX),
-        }) , 'params' );
+        const commonMiddlewares = await this.getCommonMiddlewares();
 
-        router.post( '/:slug/add' ,slugValidatorMiddleware,await Defense.createMiddlewareForJoiValidation( Joi.object({
+        router.post( '/:slug/add' ,...commonMiddlewares,await Defense.createMiddlewareForJoiValidation( Joi.object({
             quantity:Joi.number().required().integer().positive(),
             expiry:Joi.number().required().integer().positive(),
         }) , 'body' ), this.add.bind(this));
 
-        router.post( '/:slug/sell' ,slugValidatorMiddleware,await Defense.createMiddlewareForJoiValidation( Joi.object({
+        router.post( '/:slug/sell' ,...commonMiddlewares,await Defense.createMiddlewareForJoiValidation( Joi.object({
             quantity:Joi.number().required().integer().positive(),
         }), 'body' ) , this.sell.bind(this));
 
-        router.get( '/:slug/quantity' ,slugValidatorMiddleware, this.get.bind(this) );
+        router.get( '/:slug/quantity' ,...commonMiddlewares, this.get.bind(this) );
     }
 
     public async add(req:Request , res:Response , next:NextFunction){
