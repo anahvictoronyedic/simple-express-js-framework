@@ -121,8 +121,7 @@ TestUtils.setupEnvForUnitTests().then((result)=>{
 
         describe('test registerControllersThroughFolderNames()',()=>{
 
-            // the items controller is the only focus, so that how
-            // the tests goes can be controlled. 
+            // the items controller is the only focus, so that the tests can be controlled. 
             const consideredControllerSlug = 'items';
 
             const getFakeDirectoryObjects = (names:string[]) => names.map(name => ({
