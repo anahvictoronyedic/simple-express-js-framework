@@ -23,7 +23,7 @@ export default class ItemsController implements Controller<any>{
     }
 
     /**
-     * @returns an array of middlewares that comes before all endpoints registered in this controller.
+     * @returns an array of middlewares that should come before all endpoints registered in this controller.
      */
     private async getCommonMiddlewares():Promise<RequestHandler[]>{
         
