@@ -1,8 +1,6 @@
 
 # Design
 
-## Overview
-
 The application is designed using MVC architecture. There is a bootstrap file that loads resources that will be used by the application whether in http server mode or command line script mode. 
 
 The bootstrap program can be asked to load as much resources available, mostly when starting the app as a http-server or asked to load minimal amount of resources, especially when starting as a commandline script. Below are additional design points of the application.
@@ -12,32 +10,6 @@ The bootstrap program can be asked to load as much resources available, mostly w
 3) Controllers and models are loaded and linked to the application automatically.
 4) Files that reside in the `./src/app/scripts` are called scripts files and can be run directly using `ts-node`. See below for detailed information about the scripts.
 5) The boostrap program can be run in different modes, which it uses for proper amount of resource allocation. There are two modes currently, concrete and mini. Concrete means the application will use as much resources available which is suitable for express server and mini means it will use little resources which is suitable for scripts and integration testing.
-
-## Controller And Model Integration
-
-Based on the architecture, the controller and model are integrated automatically. This makes the program more cohesive in design.
-
-The architecture uses a concept of one main app that holds multiple mini-apps that can be accessed with unique url prefixes. Some mini-app examples are:
-
-1) `/items/*` - root of all inventory endpoints
-2) `/schools/*` - root of all school directory endpoints
-3) `/books/*` - root of all book endpoints
-
-Suppose a custom path( `/custom/path/*` ) needs to be added to the express app without being a mini-app. That can be done by using the express object in the `src/app/server.ts`.
-
-The `src/app/controllers` and `src/app/models` are the root directories for the controllers and models respectively.
-
-Suppose a school directory API needs to be developed in the same application that currently contains the inventory API( `/items` ). Then follow the steps below :
-
-1) create a `schools` folder in both the controller and model root directories. 
-
-2) Inside both created folders, create a `schools.ts` files that should by default export a class with a parameterless constructor that implement the Controller and Model Interface respectively.
-
-3) In both classes, implement the `init` method that gets an object of the class ready for usage. The `init` method is where configuration can be passed rather than constructor so that the flow of the program can be controlled, which is a highly desired coding style especially to make unit testing designed efficiently.
-
-4) For the controller endpoint, implement the `registerEndpoints` method and register all express middlewares and endpoints.
-
-When the steps above are followed and the application restarted, the schools directory API endpoints will be available at `/schools/*`. There wont be need to worry about instantiation of controllers and model classes and linkage to the main express app.
 
 # Installation and Usage
 
