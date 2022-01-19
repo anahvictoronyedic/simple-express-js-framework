@@ -10,7 +10,9 @@ import chai from "chai";
 TestUtils.setupEnvForIntegrationTests().then(()=>{
 
     const defaultTestSlug = 'foo';
-    const createUrl = ( urlSuffix:string ) => `/items/${defaultTestSlug}/${urlSuffix}`;
+    const slugThatDoesNotExist = 'foo-not-exist';
+
+    const createUrl = ( urlSuffix:string , slug:string = defaultTestSlug ) => `/items/${slug}/${urlSuffix}`;
 
     const mySqlDb = CoreRoutines.getObjectSafely<MySQLDB>( Constants.GLOBAL_OBJECT_KEYS.system.mysql );
     const handler = mySqlDb.getHandler();
@@ -19,7 +21,7 @@ TestUtils.setupEnvForIntegrationTests().then(()=>{
     .bind(handler);
 
     // will be used to clear the tables for testing
-    const resetDB = async ()=>{
+    const resetItemQuantitiesTable = async ()=>{
         return queryFunction({
             sql:`
             DELETE FROM ${Constants.itemsQuantitiesTableName}
@@ -28,7 +30,7 @@ TestUtils.setupEnvForIntegrationTests().then(()=>{
         });
     };
     
-    const addItem = async (quantity:number , expiry:number)=>{
+    const addItemQuantities = async (quantity:number , expiry:number)=>{
         return queryFunction({
             sql:`INSERT INTO ${Constants.itemsQuantitiesTableName}(item_id,quantity,expiry)
             VALUES(( SELECT id from ${Constants.itemsTableName} WHERE slug = ? ) , ? , FROM_UNIXTIME(? * 0.001) )`,
@@ -41,35 +43,52 @@ TestUtils.setupEnvForIntegrationTests().then(()=>{
         describe('test add endpoint', ()=>{
 
             beforeEach(async ()=>{
-                await resetDB();
+                await resetItemQuantitiesTable();
+            });
+
+            // a reusable function to keep the code DRY
+            const basicRequest = (url:string,expectedStatus:number) => chai.request(app)
+            .post(url)
+            .send({
+                quantity:20,
+                expiry:Date.now()+20000,
+            })
+            .then(function(res){
+                expect(res).to.have.status(expectedStatus);
+            });
+
+            it('should respond with status 400 for a slug that does not exist',async ()=>{
+                return basicRequest(createUrl('add' , slugThatDoesNotExist),400);
             });
 
             it('should respond with status 200',async ()=>{
-
-                return chai.request(app)
-                .post(createUrl('add'))
-                .send({
-                    quantity:20,
-                    expiry:Date.now()+20000,
-                })
-                .then(function(res){
-                    expect(res).to.have.status(200);
-                });
+                return basicRequest(createUrl('add'),200);
             });
         });
 
         describe('test sell endpoint', ()=>{
 
             beforeEach(async ()=>{
-                await resetDB();
+                await resetItemQuantitiesTable();
+            });
+
+            it('should respond with status 400 for a slug that does not exist',async ()=>{
+                return chai.request(app)
+                .post(createUrl('sell',slugThatDoesNotExist))
+                .send({
+                    quantity:1,
+                })
+                .then(function(res){
+                    expect(res).to.have.status(400);
+                });
             });
 
             it('should respond with status 200 when an unexpired quantity of item is sold',async ()=>{
 
                 const now = Date.now();
 
-                await addItem( 10 , now + 20000);
-                
+                await addItemQuantities( 10 , now + 20000);
+
                 return chai.request(app)
                 .post(createUrl('sell'))
                 .send({
@@ -84,7 +103,7 @@ TestUtils.setupEnvForIntegrationTests().then(()=>{
 
                 const now = Date.now();
 
-                await addItem( 10 , now + 20000);
+                await addItemQuantities( 10 , now + 20000);
 
                 return chai.request(app)
                 .post(createUrl('sell'))
@@ -100,7 +119,15 @@ TestUtils.setupEnvForIntegrationTests().then(()=>{
         describe('test get endpoint', ()=>{
 
             beforeEach(async ()=>{
-                await resetDB();
+                await resetItemQuantitiesTable();
+            });
+
+            it('should respond with status 400 for a slug that does not exist',async ()=>{
+                return chai.request(app)
+                .get(createUrl('quantity',slugThatDoesNotExist))
+                .then(function(res){
+                    expect(res).to.have.status(400);
+                });
             });
 
             // in simple case, the validity of the return values in the focus
@@ -111,7 +138,7 @@ TestUtils.setupEnvForIntegrationTests().then(()=>{
                 const quantity = 10 ;
                 const validTill = now + 10000;
 
-                await addItem( quantity , validTill);
+                await addItemQuantities( quantity , validTill);
 
                 return chai.request(app)
                 .get(createUrl('quantity'))
@@ -131,8 +158,8 @@ TestUtils.setupEnvForIntegrationTests().then(()=>{
 
                 const firstTime =  now + 10000;
 
-                await addItem( 11 ,firstTime);
-                await addItem(6 , now + 30000);
+                await addItemQuantities( 11 ,firstTime);
+                await addItemQuantities(6 , now + 30000);
 
                 return chai.request(app)
                 .get(createUrl('quantity'))
@@ -156,9 +183,9 @@ TestUtils.setupEnvForIntegrationTests().then(()=>{
                 /**
                  * Test extreme usecase whereby different entries of quantities and expiry exist in database.
                  */
-                await addItem( 3 , now + timeDelta);
-                await addItem( 3 , now + midTimeDelta);
-                await addItem( 5 , now + lastTimeDelta);
+                await addItemQuantities( 3 , now + timeDelta);
+                await addItemQuantities( 3 , now + midTimeDelta);
+                await addItemQuantities( 5 , now + lastTimeDelta);
 
                 // tolerance to cater for fluctuations in expected latency
                 const delayTolerance = 1000;
