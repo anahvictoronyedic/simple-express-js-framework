@@ -3,7 +3,7 @@ import mysql from "mysql";
 import { System } from "../../types";
 
 export type MySQLDB_CONFIG = {
-  connectionLimit : number,
+  connectionLimit ?: number,
   host            : string,
   user            : string,
   password        : string,
@@ -17,10 +17,15 @@ class MySQLDB implements System<MySQLDB_CONFIG , HANDLER>{
   private connection:HANDLER;
 
   async load(config:MySQLDB_CONFIG) {
+    
+    this.connection = typeof config.connectionLimit === 'number' ? 
+    
     /**
-     * Rather than a single connection, use a pool of connections for scalability and performance
+     * If connection limit is provided, rather than a single connection, use a pool of connections for scalability and performance
      */
-    this.connection = mysql.createPool(config);
+    mysql.createPool(config) :
+    
+    mysql.createConnection(config);
   }
 
   async getHandler(){
