@@ -4,5 +4,9 @@ export type Controller = { [name:string] : { method:'get'|'post'|'delete'|'put'|
 path:string , handler:RequestHandler } };
 
 export interface Model{
-    
 } ;
+
+export interface System<C,H>{
+    load( config :C ) : Promise<any>;
+    getHandler() : Promise<H>;
+}
