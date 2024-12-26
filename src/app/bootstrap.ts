@@ -9,7 +9,7 @@ export default async function(options?:{
 
     options = merge({
         mysql:{
-
+            
         } as MySQLDB_CONFIG,
     } , options);
     
