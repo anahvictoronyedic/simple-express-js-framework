@@ -2,6 +2,10 @@
 import mySqlDb, { MySQLDB_CONFIG } from "./datastore/mysql-db";
 
 import { merge } from "lodash";
+import dotenv from "dotenv";
+
+// initialize configuration
+dotenv.config();
 
 export default async function( appLevel:'concrete'|'mini', options?:{
     mysql:MySQLDB_CONFIG,

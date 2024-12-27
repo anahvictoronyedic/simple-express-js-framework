@@ -1,9 +1,5 @@
-import dotenv from "dotenv";
 
 import server from './app/server';
-
-// initialize configuration
-dotenv.config();
 
 // port is now available to the Node.js runtime 
 // as if it were an environment variable
