@@ -1,10 +1,34 @@
-import express,{ Application, Router } from "express";
+import express,{  NextFunction,Request, Response,Application,ErrorRequestHandler } from "express";
 import fs from "fs";
 import path from "path";
 import { Controller } from "../abstracts/types";
 import Constants from "../abstracts/constants";
 
 export default class CoreRoutines{
+
+    static getApiErrorHandlerMiddleware():ErrorRequestHandler{
+        return ( err:any , req:Request , res:Response , next:NextFunction )=>{
+
+            if(res.headersSent){
+                return next(err);
+            }
+
+            let statusCode = err && ( err.status || err.statusCode ) || 500 ;
+            statusCode = statusCode >= 400 && statusCode < 600 ? statusCode : 500;
+
+            const result:any = {};
+
+            if(
+            // from the http-errors library
+            ( err && err.expose )
+
+            || process.env.NODE_ENV != 'production' ) {
+                result.message = err.message ;
+            }
+
+            return res.status(statusCode).json(result);
+        };
+    }
 
     static async registerControllersThroughFolderNames( app:Application , parentFolderPath:string ){
                 
