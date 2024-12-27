@@ -1,13 +1,14 @@
 
 import mysql from "mysql";
-import { System } from "../../types";
+import { System } from "../abstracts/types";
 
 export type MySQLDB_CONFIG = {
   connectionLimit ?: number,
   host            : string,
   user            : string,
   password        : string,
-  database        : string
+  database        : string,
+  port            ?: number
 };
 
 type HANDLER = mysql.Connection|mysql.Pool;

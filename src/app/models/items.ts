@@ -1,5 +1,5 @@
 
-import { ID, Model } from "../../types";
+import { ID, Model } from "../abstracts/types";
 import mySqlDb from "../datastore/mysql-db";
 import util from 'util';
 
@@ -14,14 +14,15 @@ class ItemsModel implements Model{
 
     async sellItem( idOrSlug:ID ,quantity:number ):Promise<any>{
 
-        const queryPart = `item_id = ${this.getIdQueryFragment(idOrSlug)} AND valid_till > CURRENT_TIMESTAMP AND obsolete = FALSE`;
+        const queryPart = `item_id = ${this.getIdQueryFragment(idOrSlug)} AND expiry > CURRENT_TIMESTAMP AND obsolete = FALSE`;
         
         const query = `
         SET @quantity_sum = 0;
         UPDATE ${this.itemsQuantitiesTableName} SET @quantity_sum := @quantity_sum + quantity , 
         obsolete = CASE WHEN ? >= @quantity_sum THEN FALSE ELSE TRUE ,
         quantity = CASE WHEN ? >= @quantity_sum THEN 0 ELSE @quantity_sum - ?
-        WHERE ${queryPart} AND ? >= ( SELECT SUM(quantity) WHERE ${queryPart} )`;
+        WHERE ${queryPart} AND ? >= ( SELECT SUM(quantity) WHERE ${queryPart} )
+        ORDER BY expiry ASC`;
         
         return this.queryFunction({
             sql:query,
@@ -41,15 +42,15 @@ class ItemsModel implements Model{
         });
     }
 
-    async addItemQuantity( idOrSlug:ID , quantity:number, validTillEpochMillis:number ) {
+    async addItemQuantity( idOrSlug:ID , quantity:number, expiry:number ) {
         
         const query = `
-        INSERT INTO ${this.itemsQuantitiesTableName}( item_id , quantity , valid_till ) 
+        INSERT INTO ${this.itemsQuantitiesTableName}( item_id , quantity , expiry ) 
         VALUES( ${this.getIdQueryFragment(idOrSlug)} , ? , FROM_UNIXTIME(?) ) `;
 
         return this.queryFunction({
             sql:query,
-            values:[idOrSlug , quantity , validTillEpochMillis]
+            values:[idOrSlug , quantity , expiry]
         }).then((results:any)=>{
             if(results.affectedRows > 0 ) return Promise.resolve();
             return Promise.reject();
@@ -59,9 +60,9 @@ class ItemsModel implements Model{
     async getItemQuantity( idOrSlug:ID ) {
 
         const query = `
-        SELECT SUM(quantity) as total_quantity , MIN( valid_till ) as min_valid_till FROM ${this.itemsQuantitiesTableName}
+        SELECT SUM(quantity) as total_quantity , MIN( expiry ) as min_expiry FROM ${this.itemsQuantitiesTableName}
         WHERE item_id = ${this.getIdQueryFragment(idOrSlug)} AND obsolete = FALSE
-        HAVING min_valid_till > CURRENT_TIMESTAMP
+        HAVING min_expiry > CURRENT_TIMESTAMP
         `;
 
         return this.queryFunction({
@@ -75,7 +76,7 @@ class ItemsModel implements Model{
     async purgeItems(){
         const query = `
         DELETE FROM ${this.itemsQuantitiesTableName}
-        WHERE obsolete = TRUE OR valid_till < CURRENT_TIMESTAMP`;
+        WHERE obsolete = TRUE OR expiry < CURRENT_TIMESTAMP`;
         return this.queryFunction({
             sql:query,
         });
@@ -86,6 +87,6 @@ class ItemsModel implements Model{
     }
 }
 
-const itemsModelInst = new ItemsModel;
+const itemsModel = new ItemsModel;
 
-export default itemsModelInst;
+export default itemsModel;

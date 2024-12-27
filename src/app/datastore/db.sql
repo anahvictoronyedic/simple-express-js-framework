@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS items_quantities{
     item_id INT(11) UNSIGNED NOT NULL,
     quantity INT(11) UNSIGNED NOT NULL,
 
-    valid_till DATETIME NOT NULL,
+    expiry DATETIME NOT NULL,
 
     obsolete BOOLEAN NOT NULL DEFAULT FALSE,
     
