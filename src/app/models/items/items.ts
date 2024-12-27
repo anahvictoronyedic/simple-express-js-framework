@@ -1,6 +1,6 @@
 
-import { ID, Model } from "../abstracts/types";
-import mySqlDb from "../datastore/mysql-db";
+import { ID, Model } from "../../abstracts/types";
+import mySqlDb from "../../datastore/mysql-db";
 import util from 'util';
 
 class ItemsModel implements Model{
@@ -8,6 +8,8 @@ class ItemsModel implements Model{
     private readonly itemsTableName = 'items';
 
     private readonly itemsQuantitiesTableName = 'items_quantities';
+
+    public readonly INSUFFICIENT_QUANTITY_REASON = 'insufficient-item-quantity';
 
     private readonly dbHandler = mySqlDb.getHandler() ;
     private readonly queryFunction = util.promisify(this.dbHandler.query);
@@ -38,7 +40,7 @@ class ItemsModel implements Model{
 
                 return Promise.resolve();
             }
-            return Promise.reject( {reason:'insufficient-item-quantity' } );
+            return Promise.reject( {reason:this.INSUFFICIENT_QUANTITY_REASON } );
         });
     }
 

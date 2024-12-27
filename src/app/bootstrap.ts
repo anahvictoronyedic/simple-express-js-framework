@@ -18,7 +18,7 @@ export default async function( appLevel:'concrete'|'mini', options?:{
             password:process.env.MYSQL_PASSWORD,
             port:Number(process.env.MYSQL_PORT),
             database:process.env.MYSQL_DATABASE,
-            connectionLimit:Number(appLevel == 'concrete' ? process.env.MYSQL_STANDARD_POOL_CONNECTION_LIMIT : 
+            connectionLimit:Number(appLevel == 'concrete' ? process.env.MYSQL_CONCRETE_POOL_CONNECTION_LIMIT : 
             process.env.MYSQL_MINI_POOL_CONNECTION_LIMIT),
         } as MySQLDB_CONFIG,
     } , options);

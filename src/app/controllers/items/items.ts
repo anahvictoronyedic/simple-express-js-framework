@@ -1,9 +1,10 @@
-import { Request, Response, Router } from "express";
+import { NextFunction, Request, Response, Router } from "express";
 import Defense from "../../services/defense";
 import { Controller } from "../../abstracts/types";
-import itemsModel from "../../models/items";
+import itemsModel from "../../models/items/items";
 import Joi from "joi";
 import Constants from "../../abstracts/constants";
+import createHttpError from "http-errors";
 
 class ItemsController implements Controller{
 
@@ -25,27 +26,67 @@ class ItemsController implements Controller{
         router.get( '/:slug/quantity' , this.get );
     }
 
-    private async add(req:Request , res:Response){
+    private async add(req:Request , res:Response , next:NextFunction){
 
         const { quantity , expiry } = req.body;
 
-        await itemsModel.addItemQuantity( req.params.slug.toString() , quantity , expiry );
+        /**
+         * because the function of this scope returns a promise( due to async ), errors should be caught and the next function called
+         * in catch method.
+         * 
+         * NOTE: starting from express 5, the try catch wont be needed because express handles rejection on the promise returned.
+         * Hence when an upgrade is made to express 5, the try catch can be removed.
+         */
+        try{
+            await itemsModel.addItemQuantity( req.params.slug.toString() , quantity , expiry );
+        }
+        catch(err){
+            next(err);
+            return;
+        }
 
         return res.status(200).end();
     } 
 
-    private async sell(req:Request , res:Response){
+    private async sell(req:Request , res:Response, next:NextFunction){
 
         const { quantity } = req.body;
 
-        await itemsModel.sellItem( req.params.slug.toString() , quantity );
+        // use try catch to catch errors and check out the reason
+        try{
+            await itemsModel.sellItem( req.params.slug.toString() , quantity );
+        }
+        catch(err){
+            
+            if( err && err.reason == itemsModel.INSUFFICIENT_QUANTITY_REASON ){
+                err = createHttpError(404,'cannot sell due to insufficient number of products');
+            }
+
+            next(err);
+            return;
+        }
 
         return res.status(200).end();
     } 
 
-    private async get(req:Request , res:Response){
+    private async get(req:Request , res:Response, next:NextFunction){
 
-        const result = await itemsModel.getItemQuantity( req.params.slug.toString() );
+        let result;
+
+        /**
+         * because the function of this scope returns a promise( due to async ), errors should be caught and the next function called
+         * in catch method.
+         * 
+         * NOTE: starting from express 5, the try catch wont be needed because express handles rejection on the promise returned.
+         * Hence when an upgrade is made to express 5, the try catch can be removed.
+         */
+        try{
+            result = await itemsModel.getItemQuantity( req.params.slug.toString() );
+        }
+        catch(err){
+            next(err);
+            return;
+        }
 
         return res.status(200).json(result);
     }
