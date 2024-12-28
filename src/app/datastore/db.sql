@@ -1,7 +1,7 @@
 
 -- WARNING: TIMESTAMPS are subject to the year 2038 problem. A solution can be proffered as time proceeds.
 
-CREATE TABLE IF NOT EXISTS items{
+CREATE TABLE IF NOT EXISTS items(
     id INT(11) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     slug VARCHAR(255) NOT NULL,
 
@@ -9,9 +9,9 @@ CREATE TABLE IF NOT EXISTS items{
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     UNIQUE KEY ( slug ) ,
-};
+) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS items_quantities{
+CREATE TABLE IF NOT EXISTS items_quantities(
     
     id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
     item_id INT(11) UNSIGNED NOT NULL,
@@ -24,5 +24,7 @@ CREATE TABLE IF NOT EXISTS items_quantities{
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (item_id) REFERENCES items(id)
-};
+    FOREIGN KEY (item_id) REFERENCES items(id),
+
+    INDEX( quantity , expiry , obsolete )
+) ENGINE=InnoDB;
