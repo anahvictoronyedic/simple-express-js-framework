@@ -2,12 +2,13 @@
 import { ID, Model } from "../../abstracts/types";
 import mySqlDb from "../../datastore/mysql-db";
 import util from 'util';
+import Constants from "../../abstracts/constants";
 
 class ItemsModel implements Model{
 
-    private readonly itemsTableName = 'items';
+    public readonly itemsTableName = Constants.itemsTableName;
 
-    private readonly itemsQuantitiesTableName = 'items_quantities';
+    public readonly itemsQuantitiesTableName = Constants.itemsQuantitiesTableName;
 
     public readonly INSUFFICIENT_QUANTITY_REASON = 'insufficient-item-quantity';
 
@@ -59,10 +60,10 @@ class ItemsModel implements Model{
         });
     }
 
-    async getItemQuantity( idOrSlug:ID ) {
+    async getItemQuantity( idOrSlug:ID ) :Promise<{quantity:number,validTill:number}>{
 
         const query = `
-        SELECT SUM(quantity) as total_quantity , MIN( expiry ) as min_expiry FROM ${this.itemsQuantitiesTableName}
+        SELECT SUM(quantity) as total_quantity , MIN( expiry ) as min_expiry , UNIX_TIMESTAMP(min_expiry) as min_expiry_epoch_millis FROM ${this.itemsQuantitiesTableName}
         WHERE item_id = ${this.getIdQueryFragment(idOrSlug)} AND obsolete = FALSE
         HAVING min_expiry > CURRENT_TIMESTAMP
         `;
@@ -71,7 +72,18 @@ class ItemsModel implements Model{
             sql:query,
             values:[idOrSlug]
         }).then((results:any)=>{
-            return results.length > 0 ? results.rows[0]['total_quantity'] : 0;
+
+            const result:any = {quantity:0,validTill:null};
+            
+            if(results.length > 0){
+                const row = results.rows[0] , quantity = row['total_quantity'];
+                if( quantity > 0 ){
+                    result.quantity = quantity;
+                    result.validTill = row['min_expiry_epoch_millis'];
+                }
+            }
+
+            return result;
         });
     }
 

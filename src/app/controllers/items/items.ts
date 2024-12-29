@@ -5,8 +5,9 @@ import itemsModel from "../../models/items/items";
 import Joi from "joi";
 import Constants from "../../abstracts/constants";
 import createHttpError from "http-errors";
+import { pick } from "lodash";
 
-class ItemsController implements Controller{
+export class ItemsController implements Controller{
 
     async registerEndpoints(router: Router): Promise<void> {
 
@@ -26,7 +27,7 @@ class ItemsController implements Controller{
         router.get( '/:slug/quantity' , this.get );
     }
 
-    private async add(req:Request , res:Response , next:NextFunction){
+    public async add(req:Request , res:Response , next:NextFunction){
 
         const { quantity , expiry } = req.body;
 
@@ -48,7 +49,7 @@ class ItemsController implements Controller{
         return res.status(200).end();
     } 
 
-    private async sell(req:Request , res:Response, next:NextFunction){
+    public async sell(req:Request , res:Response, next:NextFunction){
 
         const { quantity } = req.body;
 
@@ -60,7 +61,7 @@ class ItemsController implements Controller{
             
             if( err && err.reason == itemsModel.INSUFFICIENT_QUANTITY_REASON ){
                 
-                err = createHttpError(404,'cannot sell due to insufficient number of products',{
+                err = createHttpError(403,'cannot sell due to insufficient number of products',{
 
                     // indicate to the error handler, that the message can be exposed
                     expose:true,
@@ -74,7 +75,7 @@ class ItemsController implements Controller{
         return res.status(200).end();
     } 
 
-    private async get(req:Request , res:Response, next:NextFunction){
+    public async get(req:Request , res:Response, next:NextFunction){
 
         let result;
 
@@ -86,7 +87,7 @@ class ItemsController implements Controller{
          * Hence when an upgrade is made to express 5, the try catch can be removed.
          */
         try{
-            result = await itemsModel.getItemQuantity( req.params.slug.toString() );
+            result = pick(await itemsModel.getItemQuantity( req.params.slug.toString() ) , ['quantity','validTill']);
         }
         catch(err){
             next(err);

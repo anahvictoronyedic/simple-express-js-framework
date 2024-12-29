@@ -38,7 +38,7 @@ export default class CoreRoutines{
 
         for( const controllerName of controllerNames ){
 
-            if( !Constants.SLUG_REGEX.test(controllerName) ) throw new Error(`failed to load controller ( ${controllerName} ) in ( ${parentFolderPath} ) because it contains invalid characters`);
+            if( !Constants.SLUG_REGEX.test(controllerName) ) throw new Error(`failed to load controller ( ${controllerName} ) in ( ${parentFolderPath} ) because it is not in slug format due to invalid characters`);
 
             const controller:Controller = require( path.join( parentFolderPath , controllerName , `${controllerName}.js` ) );
 
