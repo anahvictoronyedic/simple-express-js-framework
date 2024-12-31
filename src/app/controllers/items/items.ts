@@ -11,20 +11,20 @@ export class ItemsController implements Controller{
 
     async registerEndpoints(router: Router): Promise<void> {
 
-        router.use( await Defense.createMiddlewareForJoiValidation( Joi.object({
+        const slugValidatorMiddleware = await Defense.createMiddlewareForJoiValidation( Joi.object({
             slug:Joi.string().required().regex(Constants.SLUG_REGEX),
-        }) , 'params' ) );
+        }) , 'params' );
 
-        router.post( '/:slug/add' ,await Defense.createMiddlewareForJoiValidation( Joi.object({
+        router.post( '/:slug/add' ,slugValidatorMiddleware,await Defense.createMiddlewareForJoiValidation( Joi.object({
             quantity:Joi.number().required().integer().positive(),
             expiry:Joi.number().required().integer().positive(),
         }) , 'body' ), this.add);
-        
-        router.post( '/:slug/sell' ,await Defense.createMiddlewareForJoiValidation( Joi.object({
+
+        router.post( '/:slug/sell' ,slugValidatorMiddleware,await Defense.createMiddlewareForJoiValidation( Joi.object({
             quantity:Joi.number().required().integer().positive(),
         }), 'body' ) , this.sell);
 
-        router.get( '/:slug/quantity' , this.get );
+        router.get( '/:slug/quantity' ,slugValidatorMiddleware, this.get );
     }
 
     public async add(req:Request , res:Response , next:NextFunction){
@@ -34,7 +34,7 @@ export class ItemsController implements Controller{
         /**
          * because the function of this scope returns a promise( due to async ), errors should be caught and the next function called
          * in catch method.
-         * 
+         *
          * NOTE: starting from express 5, the try catch wont be needed because express handles rejection on the promise returned.
          * Hence when an upgrade is made to express 5, the try catch can be removed.
          */
@@ -47,7 +47,7 @@ export class ItemsController implements Controller{
         }
 
         return res.status(200).end();
-    } 
+    }
 
     public async sell(req:Request , res:Response, next:NextFunction){
 
@@ -58,10 +58,10 @@ export class ItemsController implements Controller{
             await itemsModel.sellItem( req.params.slug.toString() , quantity );
         }
         catch(err){
-            
-            if( err && err.reason == itemsModel.INSUFFICIENT_QUANTITY_REASON ){
-                
-                err = createHttpError(403,'cannot sell due to insufficient number of products',{
+
+            if( err && err.reason === itemsModel.INSUFFICIENT_QUANTITY_REASON ){
+
+                err = createHttpError(404,'cannot sell due to insufficient number of products',{
 
                     // indicate to the error handler, that the message can be exposed
                     expose:true,
@@ -73,7 +73,7 @@ export class ItemsController implements Controller{
         }
 
         return res.status(200).end();
-    } 
+    }
 
     public async get(req:Request , res:Response, next:NextFunction){
 
@@ -82,7 +82,7 @@ export class ItemsController implements Controller{
         /**
          * because the function of this scope returns a promise( due to async ), errors should be caught and the next function called
          * in catch method.
-         * 
+         *
          * NOTE: starting from express 5, the try catch wont be needed because express handles rejection on the promise returned.
          * Hence when an upgrade is made to express 5, the try catch can be removed.
          */
@@ -98,6 +98,6 @@ export class ItemsController implements Controller{
     }
 }
 
-const itemsController = new ItemsController;
+const itemsController = new ItemsController();
 
 export default itemsController;

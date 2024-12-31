@@ -16,9 +16,9 @@ export default class TestUtils{
     }
 
     static setupEnvForIntegrationTests(){
-                
+
         /*
-        Load the bootstrap program because of the nature of integration test. Use mini option to indicate the application only need 
+        Load the bootstrap program because of the nature of integration test. Use mini option to indicate the application only need
         a little amount of resources.
         */
         bootstrap('mini').then();

@@ -1,31 +1,24 @@
 
 import mysql from "mysql";
-import { System } from "../abstracts/types";
+import { SubSystem } from "../abstracts/types";
 
-export type MySQLDB_CONFIG = {
-  connectionLimit ?: number,
-  host            : string,
-  user            : string,
-  password        : string,
-  database        : string,
-  port            ?: number
-};
+export type MySQLDB_CONFIG =  (mysql.PoolConfig | mysql.ConnectionConfig);
 
 type HANDLER = mysql.Connection|mysql.Pool;
 
-class MySQLDB implements System<MySQLDB_CONFIG , HANDLER>{
+class MySQLDB implements SubSystem<MySQLDB_CONFIG , HANDLER>{
 
   private connection:HANDLER;
 
   async load(config:MySQLDB_CONFIG) {
-    
-    this.connection = typeof config.connectionLimit === 'number' ? 
-    
+
+    this.connection = 'connectionLimit' in config && typeof config.connectionLimit === 'number' ?
+
     /**
      * If connection limit is provided, rather than a single connection, use a pool of connections for scalability and performance
      */
     mysql.createPool(config) :
-    
+
     mysql.createConnection(config);
   }
 
@@ -34,6 +27,6 @@ class MySQLDB implements System<MySQLDB_CONFIG , HANDLER>{
   }
 }
 
-const mySqlDb = new MySQLDB;
+const mySqlDb = new MySQLDB();
 
 export default mySqlDb;
