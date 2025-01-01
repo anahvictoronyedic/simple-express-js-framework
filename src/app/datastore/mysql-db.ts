@@ -6,7 +6,7 @@ export type MySQLDB_CONFIG =  (mysql.PoolConfig | mysql.ConnectionConfig);
 
 type HANDLER = mysql.Connection|mysql.Pool;
 
-class MySQLDB implements SubSystem<MySQLDB_CONFIG , HANDLER>{
+export default class MySQLDB implements SubSystem<MySQLDB_CONFIG , HANDLER>{
 
   private connection:HANDLER;
 
@@ -26,7 +26,3 @@ class MySQLDB implements SubSystem<MySQLDB_CONFIG , HANDLER>{
     return this.connection;
   }
 }
-
-const mySqlDb = new MySQLDB();
-
-export default mySqlDb;

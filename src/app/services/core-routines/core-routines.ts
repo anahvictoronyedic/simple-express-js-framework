@@ -1,10 +1,18 @@
 import express,{  NextFunction,Request, Response,Application,ErrorRequestHandler } from "express";
 import fs from "fs";
 import path from "path";
-import { Controller } from "../abstracts/types";
-import Constants from "../abstracts/constants";
+import { Controller } from "../../abstracts/types";
+import Constants from "../../abstracts/constants";
 
 export default class CoreRoutines{
+
+    public static readonly objectStore = new Map<string,any>();
+    public static getObjectSafely<R>( key:string ){
+
+        if( !this.objectStore.has( key ) ) throw new Error();
+
+        return this.objectStore.get(key ) as R;
+    }
 
     static getApiErrorHandlerMiddleware():ErrorRequestHandler{
         return ( err:any , req:Request , res:Response , next:NextFunction )=>{
@@ -42,11 +50,17 @@ export default class CoreRoutines{
 
             if( !Constants.SLUG_REGEX.test(controllerName) ) throw new Error(`failed to load controller ( ${controllerName} ) in ( ${parentFolderPath} ) because it is not in slug format due to invalid characters`);
 
-            const controller:Controller = require( path.join( parentFolderPath , controllerName , `${controllerName}.js` ) ).default;
+            const controllerClass = require( path.join( parentFolderPath , controllerName , `${controllerName}.js` ) ).default;
+
+            // instantiate the controller
+            const controllerInstance = new controllerClass();
+
+            // add it to global object store
+            this.objectStore.set( (Constants.GLOBAL_OBJECT_KEYS.controller as any)[controllerName] , controllerInstance );
 
             const router = express.Router();
 
-            await controller.registerEndpoints(router);
+            await controllerInstance.registerEndpoints(router);
 
             app.use( `/${controllerName}` , router );
         }

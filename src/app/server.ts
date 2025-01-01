@@ -3,7 +3,7 @@ import cors from "cors";
 import express from "express";
 import path from "path";
 import bootstrap from "./bootstrap";
-import CoreRoutines from "./services/core-routines";
+import CoreRoutines from "./services/core-routines/core-routines";
 
 const app = express();
 

@@ -1,4 +1,4 @@
 
--- Set the slug variable to the item slug you want to insert
-SET @slug = NULL;
+-- Set the slug variable to insert
+SET @slug = 'foo';
 INSERT INTO items (slug) VALUES(@slug);

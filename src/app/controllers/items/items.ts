@@ -6,8 +6,17 @@ import Joi from "joi";
 import Constants from "../../abstracts/constants";
 import createHttpError from "http-errors";
 import { pick } from "lodash";
+import ItemsModel from "../../models/items/items";
+import CoreRoutines from "../../services/core-routines/core-routines";
 
-export class ItemsController implements Controller{
+export default class ItemsController implements Controller{
+
+    private itemsModel:ItemsModel;
+
+    public constructor(itemsModel?:ItemsModel){
+        this.itemsModel = itemsModel || 
+        CoreRoutines.getObjectSafely<ItemsModel>( Constants.GLOBAL_OBJECT_KEYS.system.mysql );
+    }
 
     async registerEndpoints(router: Router): Promise<void> {
 
@@ -39,7 +48,7 @@ export class ItemsController implements Controller{
          * Hence when an upgrade is made to express 5, the try catch can be removed.
          */
         try{
-            await itemsModel.addItemQuantity( req.params.slug.toString() , quantity , expiry );
+            await this.itemsModel.addItemQuantity( req.params.slug.toString() , quantity , expiry );
         }
         catch(err){
             next(err);
@@ -55,11 +64,11 @@ export class ItemsController implements Controller{
 
         // use try catch to catch errors and check out the reason
         try{
-            await itemsModel.sellItem( req.params.slug.toString() , quantity );
+            await this.itemsModel.sellItem( req.params.slug.toString() , quantity );
         }
         catch(err){
 
-            if( err && err.reason === itemsModel.INSUFFICIENT_QUANTITY_REASON ){
+            if( err && err.reason === this.itemsModel.INSUFFICIENT_QUANTITY_REASON ){
 
                 err = createHttpError(404,'cannot sell due to insufficient number of products',{
 
@@ -87,7 +96,7 @@ export class ItemsController implements Controller{
          * Hence when an upgrade is made to express 5, the try catch can be removed.
          */
         try{
-            result = pick(await itemsModel.getItemQuantity( req.params.slug.toString() ) , ['quantity','validTill']);
+            result = pick(await this.itemsModel.getItemQuantity( req.params.slug.toString() ) , ['quantity','validTill']);
         }
         catch(err){
             next(err);
@@ -97,7 +106,3 @@ export class ItemsController implements Controller{
         return res.status(200).json(result);
     }
 }
-
-const itemsController = new ItemsController();
-
-export default itemsController;

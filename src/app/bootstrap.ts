@@ -1,11 +1,21 @@
 
-import mySqlDb, { MySQLDB_CONFIG } from "./datastore/mysql-db";
+import MySQLDB, { MySQLDB_CONFIG } from "./datastore/mysql-db";
 
 import { merge } from "lodash";
 import dotenv from "dotenv";
+import path from "path";
+import CoreRoutines from "./services/core-routines/core-routines";
+import Constants from "./abstracts/constants";
 
 // initialize configuration
 dotenv.config();
+
+// make sure node_env is always set
+process.env.NODE_ENV = process.env.NODE_ENV || 'development';
+
+process.env.APP_ROOT_PATH = path.join(__dirname , '../../');
+
+console.log('process.env.APP_ROOT_PATH : ',process.env.APP_ROOT_PATH);
 
 export default async function( appLevel:'concrete'|'mini', options?:{
     mysql:MySQLDB_CONFIG,
@@ -25,6 +35,9 @@ export default async function( appLevel:'concrete'|'mini', options?:{
     options = merge({
         mysql:mysqlConfig,
     } , options);
+
+    const mySqlDb = new MySQLDB();
+    CoreRoutines.objectStore.set(Constants.GLOBAL_OBJECT_KEYS.system.mysql,mySqlDb);
 
     await mySqlDb.load(options.mysql);
 };
