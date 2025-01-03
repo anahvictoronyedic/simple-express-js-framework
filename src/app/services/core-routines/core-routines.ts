@@ -1,7 +1,6 @@
 import express,{  NextFunction,Request, Response,Application,ErrorRequestHandler } from "express";
 import fs from "fs";
 import path from "path";
-import { Controller } from "../../abstracts/types";
 import Constants from "../../abstracts/constants";
 
 export default class CoreRoutines{
@@ -14,10 +13,17 @@ export default class CoreRoutines{
         return this.objectStore.get(key ) as R;
     }
 
+    static isRunningAsTypescript(){
+        const ext = path.extname(__filename);
+        return ext == '.ts' || ext == '.tsx';
+    }
+
     static getApiErrorHandlerMiddleware():ErrorRequestHandler{
         return ( err:any , req:Request , res:Response , next:NextFunction )=>{
 
-            console.log('error : ',err);
+            const isDevMode = process.env.NODE_ENV === 'development';
+
+            // if( isDevMode ) console.log('CoreRoutines.getApiErrorHandlerMiddleware() error : ' , err );
 
             if(res.headersSent){
                 return next(err);
@@ -32,7 +38,7 @@ export default class CoreRoutines{
             // from the http-errors library
             ( err && err.expose )
 
-            || process.env.NODE_ENV !== 'production' ) {
+            || isDevMode ) {
                 result.message = err.message ;
             }
 
@@ -40,23 +46,39 @@ export default class CoreRoutines{
         };
     }
 
-    static async registerControllersThroughFolderNames( app:Application , parentFolderPath:string ){
+    static async registerControllersThroughFolderNames( app:Application , folderPath:{
+        controller:string,
+        model:string,
+    } ){
 
-        const controllerNames = fs.readdirSync(parentFolderPath, { withFileTypes: true })
+        const controllerNames = fs.readdirSync(folderPath.controller, { withFileTypes: true })
         .filter(dirent => dirent.isDirectory())
         .map(dirent => dirent.name);
 
         for( const controllerName of controllerNames ){
 
-            if( !Constants.SLUG_REGEX.test(controllerName) ) throw new Error(`failed to load controller ( ${controllerName} ) in ( ${parentFolderPath} ) because it is not in slug format due to invalid characters`);
+            if( !Constants.SLUG_REGEX.test(controllerName) ) throw new Error(`failed to load controller ( ${controllerName} ) in ( ${folderPath.controller} ) because it is not in slug format due to invalid characters`);
 
-            const controllerClass = require( path.join( parentFolderPath , controllerName , `${controllerName}.js` ) ).default;
+            const controllerObjectKeys = Constants.GLOBAL_OBJECT_KEYS.controller as any;
+            const modelObjectKeys = Constants.GLOBAL_OBJECT_KEYS.model as any;
+
+            if( !( controllerName in controllerObjectKeys ) ) throw new Error(`failed to find key for controller to use to set controller in the app object store`);
+            if( !( controllerName in modelObjectKeys ) ) throw new Error(`failed to find key for controller to use to set its model in the app object store`);
+
+            const ext = this.isRunningAsTypescript()?'ts':'js';
+
+            const ControllerClass = require( path.join( folderPath.controller , controllerName , `${controllerName}.${ext}` ) ).default;
+            const ModelClass = require( path.join( folderPath.model , controllerName , `${controllerName}.${ext}` ) ).default;
+
+            // instantiate the model before the controller
+            const modelInstance = new ModelClass();
+            await modelInstance.init();
+            this.objectStore.set(modelObjectKeys[controllerName] , modelInstance ); 
 
             // instantiate the controller
-            const controllerInstance = new controllerClass();
-
-            // add it to global object store
-            this.objectStore.set( (Constants.GLOBAL_OBJECT_KEYS.controller as any)[controllerName] , controllerInstance );
+            const controllerInstance = new ControllerClass();
+            await controllerInstance.init();
+            this.objectStore.set( controllerObjectKeys[controllerName] , controllerInstance );
 
             const router = express.Router();
 

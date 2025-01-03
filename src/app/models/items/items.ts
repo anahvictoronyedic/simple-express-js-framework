@@ -1,21 +1,29 @@
 
-import { ID } from "../../abstracts/types";
+import { ID, Model } from "../../abstracts/types";
 import util from 'util';
 import Constants from "../../abstracts/constants";
 import CoreRoutines from "../../services/core-routines/core-routines";
 import MySQLDB from "../../datastore/mysql-db";
+import { QueryFunction, QueryOptions } from "mysql";
 
-export default class ItemsModel{
+export default class ItemsModel implements Model<any>{
 
     public readonly INSUFFICIENT_QUANTITY_REASON = 'insufficient-item-quantity';
 
-    private mySqlDb = CoreRoutines.getObjectSafely<MySQLDB>( Constants.GLOBAL_OBJECT_KEYS.system.mysql );
+    private mySqlDb :MySQLDB;
 
-    private readonly dbHandler = this.mySqlDb.getHandler();
+    private queryFunction : (options:string|QueryOptions)=>Promise<any>;
 
-    private readonly queryFunction = util.promisify(this.dbHandler.query)
-    // NOTE: this is ugly, util.promisify should allow context to be defined. A better solution is needed.
-    .bind(this.dbHandler);
+    async init(config: any){
+
+        this.mySqlDb = CoreRoutines.getObjectSafely<MySQLDB>( Constants.GLOBAL_OBJECT_KEYS.system.mysql );
+
+        const dbHandler = this.mySqlDb.getHandler();
+
+        this.queryFunction = util.promisify(dbHandler.query)
+        // NOTE: this is ugly, util.promisify should allow context to be defined. A better solution is needed.
+        .bind(dbHandler);
+    }
 
     async sellItem( idOrSlug:ID ,quantity:number ):Promise<any>{
 
@@ -35,8 +43,6 @@ export default class ItemsModel{
             return Promise.reject( {reason:'error' , err} );
         }).then((results:any)=>{
 
-            console.log(results);
-
             if(results.length > 0 
                 
                 // this expression uses mysql representation of true and false, which is 1 and 0 respectively.
@@ -52,7 +58,7 @@ export default class ItemsModel{
 
         const query = `
         INSERT INTO ${Constants.itemsQuantitiesTableName}( item_id , quantity , expiry )
-        VALUES( ${this.getIdQueryFragment(idOrSlug)} , ? , FROM_UNIXTIME(?/1000) ) `;
+        VALUES( ${this.getIdQueryFragment(idOrSlug)} , ? , FROM_UNIXTIME(? * 0.001) ) `;
 
         return this.queryFunction({
             sql:query,

@@ -3,181 +3,215 @@ import { Response } from "express";
 import Sinon from "sinon";
 import { PLAIN_OBJECT } from "../../abstracts/types";
 import TestUtils from "../../services/test-utils";
-import ItemsModel from "../../models/items/items";
 import ItemsController from "./items";
+import CoreRoutines from "../../services/core-routines/core-routines";
+import Constants from "../../abstracts/constants";
+import chai from "chai";
+import ItemsModel from "../../models/items/items";
+
+let sinonTest:any;
 
 // do priliminary setup for unit test
-TestUtils.setupEnvForUnitTests();
+TestUtils.setupEnvForUnitTests().then((result)=>{
+    
+    sinonTest = result.sinonTest;
 
-describe('test items controller',()=>{
+    describe('test items controller',()=>{
 
-    /**
-     * creates a fake normalized req object that will be used for testing. Normalized means all required key value have been
-     * populated in the req object.
-     * @param req the callees format of the fake request object that should be normalized
-     * @returns a normalized req object that should be used
-     */
-    const createFakeReqObject = (req:PLAIN_OBJECT) => TestUtils.createFakeReqObject( merge({
-        params:{
-            slug:'foo',
-        }
-    },req) );
-
-    let res:any ;
-    let sandbox:Sinon.SinonSandbox;
-    let error:Error;
-
-    const itemsModel = new ItemsModel();
-    const itemsController = new ItemsController(itemsModel);
-
-    beforeEach( ()=> {
-
-        sandbox = Sinon.createSandbox();
-
-        error = new Error();
-
-        const endSpy = sandbox.spy();
-        const jsonSpy = sandbox.spy();
-
-        res = {
-            json:jsonSpy,
-            end:endSpy,
-            status:sandbox.stub().returns({end:endSpy,json:jsonSpy}),
-        };
-    });
-
-    afterEach( ()=> {
-        // completely restore all fakes created through the sandbox
-        sandbox.restore();
-    });
-
-    describe('test add middleware',async ()=>{
-
-        const req = createFakeReqObject( {
-            body:{
-                quantity:10,
-                expiry:Date.now() + 10000,
+        /**
+         * creates a fake normalized req object that will be used for testing. Normalized means all required key value have been
+         * populated in the req object.
+         * @param req the callees format of the fake request object that should be normalized
+         * @returns a normalized req object that should be used
+         */
+        const createFakeReqObject = (req:PLAIN_OBJECT) => TestUtils.createFakeReqObject( merge({
+            params:{
+                slug:'foo',
             }
-        } );
+        },req) );
 
-        sandbox.stub(itemsModel,'addItemQuantity')
+        let res:any ;
+        let error:Error;
 
-        // to test when addItemQuantity returns a promise that resolves
-        .onFirstCall().resolves()
+        let itemsModel:Sinon.SinonStubbedInstance<ItemsModel>;
+    
+        let itemsController:ItemsController;
 
-        // to test when addItemQuantity returns a promise that rejects
-        .onSecondCall().rejects(error);
+        before( ()=> {
 
-        it('should call res.status(200).end() when item added successfully',()=>{
+            itemsModel = Sinon.createStubInstance( ItemsModel );
 
-            itemsController.add( req , res as Response , ()=>{} );
+            // NOTE: after the itemsModel is stubbed, polyfill these properties
+            (itemsModel as any).INSUFFICIENT_QUANTITY_REASON = itemsModel.INSUFFICIENT_QUANTITY_REASON || 
+            'invalid-reason';
 
-            chai.expect(itemsModel.addItemQuantity).to.be.calledOnce;
-            chai.expect(res.status).to.be.calledOnceWithExactly(200);
-            chai.expect(res.status).to.be.calledBefore(res.end);
-            chai.expect(res.end).to.be.calledOnce;
+            const objectStoreStub = Sinon.stub(CoreRoutines.objectStore);
+            
+            objectStoreStub.get.withArgs(Constants.GLOBAL_OBJECT_KEYS.model.items)
+            .returns( itemsModel );
+            objectStoreStub.has.withArgs(Constants.GLOBAL_OBJECT_KEYS.model.items)
+            .returns(true);
+
+            itemsController = new ItemsController();
+            itemsController.init({});
+
+            error = new Error();
+
+            const endSpy = Sinon.spy();
+            const jsonSpy = Sinon.spy();
+
+            res = {
+                json:jsonSpy,
+                end:endSpy,
+                status:Sinon.stub().returns({end:endSpy,json:jsonSpy}),
+            };
         });
 
-        it('should call the middleware next function when item fails to get added by the model',()=>{
-
-            const nextFunction = sandbox.spy();
-
-            itemsController.add( req , res as Response , nextFunction );
-
-            chai.expect(itemsModel.addItemQuantity).to.be.calledOnce;
-            chai.expect(nextFunction).to.be.calledOnceWith(error);
-        });
-    });
-
-    describe('test sell middleware',async ()=>{
-
-        const req = createFakeReqObject( {
-            body:{
-                quantity:10,
-            }
-        } );
-
-        sandbox.stub(itemsModel,'sellItem')
-
-        // to test when sellItem returns a promise that resolves
-        .onFirstCall().resolves()
-
-        // to test when sellItem returns a promise that rejects
-        .onSecondCall().rejects(error)
-
-        // to test when sellItem returns a promise that rejects due to insufficient number of products to sell
-        .onThirdCall().rejects({
-            reason : itemsModel.INSUFFICIENT_QUANTITY_REASON,
+        after(()=>{
+            Sinon.restore();
         });
 
-        it('should call res.status(200).end() when item sale is successful in the model',()=>{
+        describe('test add middleware',()=>{
 
-            itemsController.add( req , res as Response , ()=>{} );
-            chai.expect(itemsModel.sellItem).to.be.calledOnce;
-            chai.expect(res.status).to.be.calledOnceWithExactly(200);
-            chai.expect(res.status).to.be.calledBefore(res.end);
-            chai.expect(res.end).to.be.calledOnce;
-        });
+            const req = createFakeReqObject( {
+                body:{
+                    quantity:10,
+                    expiry:Date.now() + 10000,
+                }
+            } );
 
-        it('should call the middleware next function when an item fails to be sold',()=>{
+            afterEach( ()=> {
+                Sinon.resetHistory();
+            });
+        
+            it('should respond with status 200 and end the connection when item added successfully',sinonTest( async function (){
 
-            const nextFunction = sandbox.spy();
+                const stub = itemsModel.addItemQuantity.resolves();
 
-            itemsController.add( req , res as Response , nextFunction );
-            chai.expect(itemsModel.sellItem).to.be.calledOnce;
-            chai.expect(nextFunction).to.be.calledOnceWith(error);
-        });
+                await itemsController.add( req , res as Response , ()=>{} );
 
-        it('should call the middleware next function with object that must have {statusCode:404} set, when no items found to be sold',()=>{
+                chai.expect(itemsModel.addItemQuantity).to.be.calledOnce;
+                chai.expect(res.status).to.be.calledOnceWithExactly(200);
+                chai.expect(res.status).to.be.calledBefore(res.end);
+                chai.expect(res.end).to.be.calledOnce;
 
-            const nextFunction = sandbox.spy();
+                stub.resetHistory();
+            }));
 
-            itemsController.add( req , res as Response , nextFunction );
-            chai.expect(itemsModel.sellItem).to.be.calledOnce;
-            chai.expect(nextFunction).to.be.calledOnceWith(Sinon.match({
-                statusCode:404,
+            it('should call the middleware next function when item fails to get added by the model',sinonTest( async function (){
+
+                const stub = itemsModel.addItemQuantity.rejects(error);
+
+                const nextFunction = this.spy();
+
+                await itemsController.add( req , res as Response , nextFunction );
+
+                chai.expect(itemsModel.addItemQuantity).to.be.calledOnce;
+                chai.expect(nextFunction).to.be.calledOnceWith(error);
+
+                stub.resetHistory();
             }));
         });
-    });
 
-    describe('test get middleware',async ()=>{
+        describe('test sell middleware',()=>{
 
-        const req = createFakeReqObject( {
-            body:{
-            }
-        } );
+            const req = createFakeReqObject( {
+                body:{
+                    quantity:10,
+                }
+            } );
 
-        const result = {
-            quantity:10,
-            validTill:Date.now() + 20000,
-        };
+            afterEach( ()=> {
+                Sinon.resetHistory();
+            });
+        
+            it('should respond with status 200 and end the connection when item sale is successful in the model',sinonTest( async function (){
 
-        sandbox.stub(itemsModel,'getItemQuantity')
+                const stub = itemsModel.sellItem.resolves();
 
-        // to test when getItemQuantity returns a promise that resolves
-        .onFirstCall().resolves(result)
+                await itemsController.sell( req , res as Response , ()=>{} );
+                chai.expect(itemsModel.sellItem).to.be.calledOnce;
+                chai.expect(res.status).to.be.calledOnceWithExactly(200);
+                chai.expect(res.status).to.be.calledBefore(res.end);
+                chai.expect(res.end).to.be.calledOnce;
 
-        // to test when getItemQuantity returns a promise that rejects
-        .onSecondCall().rejects(error);
+                stub.resetHistory();
+            }));
 
-        it('should call res.status(200).json(result) when data is fetched successfully from the model',()=>{
+            it('should call the middleware next function when an item fails to be sold',sinonTest( async function (){
 
-            itemsController.get( req , res as Response , ()=>{} );
+                const stub = itemsModel.sellItem.rejects(error);
 
-            chai.expect(itemsModel.getItemQuantity).to.be.calledOnce;
-            chai.expect(res.status).to.be.calledOnceWithExactly(200);
-            chai.expect(res.status).to.be.calledBefore(res.json);
-            chai.expect(res.json).to.be.calledOnceWithExactly(result);
+                const nextFunction = this.spy();
+
+                await itemsController.sell( req , res as Response , nextFunction );
+                chai.expect(itemsModel.sellItem).to.be.calledOnce;
+                chai.expect(nextFunction).to.be.calledOnceWith(error);
+
+                stub.resetHistory();
+            }));
+
+            it('should call the middleware next function with object that must have {statusCode:404} set, when no items found to be sold', sinonTest( async function (){
+
+                const stub = itemsModel.sellItem.rejects({
+                    reason : itemsModel.INSUFFICIENT_QUANTITY_REASON,
+                });
+
+                const nextFunction = this.spy();
+
+                await itemsController.sell( req , res as Response , nextFunction );
+                chai.expect(itemsModel.sellItem).to.be.calledOnce;
+                chai.expect(nextFunction).to.be.calledOnceWith(Sinon.match({
+                    statusCode:404,
+                }));
+
+                stub.resetHistory();
+            }));
         });
 
-        it('should call middleware next function when data fetch from model fails',()=>{
+        describe('test get middleware',()=>{
 
-            const nextFunction = sandbox.spy();
+            const req = createFakeReqObject( {
+                body:{
+                }
+            } );
 
-            itemsController.add( req , res as Response , nextFunction );
+            const result = {
+                quantity:10,
+                validTill:Date.now() + 20000,
+            };
 
-            chai.expect(itemsModel.getItemQuantity).to.be.calledOnce;
-            chai.expect(nextFunction).to.be.calledOnceWith(error);
+            afterEach( ()=> {
+                Sinon.resetHistory();
+            });
+        
+            it('should respond with status 200 and result as json when data is fetched successfully from the model', sinonTest( async function (){
+    
+                const stub = itemsModel.getItemQuantity.resolves(result);
+
+                await itemsController.get( req , res as Response , ()=>{} );
+
+                chai.expect(itemsModel.getItemQuantity).to.be.calledOnce;
+                chai.expect(res.status).to.be.calledOnceWithExactly(200);
+                chai.expect(res.status).to.be.calledBefore(res.json);
+                chai.expect(res.json).to.be.calledOnceWithExactly(Sinon.match(result));
+
+                stub.resetHistory();
+            }));
+
+            it('should call middleware next function when data fetch from model fails',sinonTest( async function (){
+    
+                const stub = itemsModel.getItemQuantity.rejects(error);
+
+                const nextFunction = this.spy();
+
+                await itemsController.get( req , res as Response , nextFunction );
+
+                chai.expect(itemsModel.getItemQuantity).to.be.calledOnce;
+                chai.expect(nextFunction).to.be.calledOnceWith(error);
+
+                stub.resetHistory();
+            }));
         });
     });
 });

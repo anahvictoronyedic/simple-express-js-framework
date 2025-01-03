@@ -8,6 +8,5 @@ const port = process.env.PORT || process.env.SERVER_PORT;
 
 // start the express server
 server.listen( port, () => {
-    // tslint:disable-next-line:no-console
     console.log( `server started at http://localhost:${ port }` );
 } );
