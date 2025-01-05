@@ -1,11 +1,4 @@
 import bootstrap from "../bootstrap";
-
-/*
-Load the bootstrap program early enough because further imports might immediately depend on it while being imported. 
-Use mini option to indicate the application only need a little amount of resources.
-*/
-bootstrap('mini').then();
-
 import { isString } from "lodash";
 import Constants from "../abstracts/constants";
 import { PLAIN_OBJECT, Script } from "../abstracts/types";
@@ -32,11 +25,17 @@ export class AddItem implements Script{
     }
 }
 
-const argv = process.argv.slice(2);
-new AddItem().run( {
-    slug:argv.length>0?argv[0]:null,
-} ).then(()=>{
-    console.log('script executed successfully');
-}).catch((e)=>{
-    console.error('script failed',e);
+/*
+Load the bootstrapper and use mini option to indicate the application only need a little amount of resources.
+*/
+bootstrap('mini').then(()=>{
+
+    const argv = process.argv.slice(2);
+    new AddItem().run( {
+        slug:argv.length>0?argv[0]:null,
+    } ).then(()=>{
+        console.log('script executed successfully');
+    }).catch((e)=>{
+        console.error('script failed',e);
+    });
 });

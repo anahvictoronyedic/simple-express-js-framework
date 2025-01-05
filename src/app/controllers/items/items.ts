@@ -10,6 +10,9 @@ import CoreRoutines from "../../services/core-routines/core-routines";
 
 export default class ItemsController implements Controller<any>{
 
+    /**
+     * The model used to get item data.
+     */
     private itemsModel:ItemsModel;
 
     public constructor(){
@@ -19,8 +22,12 @@ export default class ItemsController implements Controller<any>{
         this.itemsModel = CoreRoutines.getObjectSafely<ItemsModel>( Constants.GLOBAL_OBJECT_KEYS.model.items );
     }
 
+    /**
+     * 
+     * @param router The express router to register endpoints and middlewares
+     */
     async registerEndpoints(router: Router): Promise<void> {
-
+        
         const slugValidatorMiddleware = await Defense.createMiddlewareForJoiValidation( Joi.object({
             slug:Joi.string().required().regex(Constants.SLUG_REGEX),
         }) , 'params' );
@@ -69,6 +76,7 @@ export default class ItemsController implements Controller<any>{
         }
         catch(err){
 
+            // the model returns a reason for special kind of errors
             if( err && err.reason === this.itemsModel.INSUFFICIENT_QUANTITY_REASON ){
 
                 err = createHttpError(404,'cannot sell due to insufficient number of products',{

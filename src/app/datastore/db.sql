@@ -17,8 +17,10 @@ CREATE TABLE IF NOT EXISTS items_quantities(
     item_id INT(11) UNSIGNED NOT NULL,
     quantity INT(11) UNSIGNED NOT NULL,
 
+    -- The expiry considers up to 3 fractional digits for precision
     expiry DATETIME(3) NOT NULL,
 
+    -- if true, the entry is invalid whether the product has expired or not
     obsolete BOOLEAN NOT NULL DEFAULT FALSE ,
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -29,6 +31,7 @@ CREATE TABLE IF NOT EXISTS items_quantities(
     INDEX( quantity , expiry , obsolete )
 ) ENGINE=InnoDB;
 
+-- This procedure uses transaction and rowlocking to make sale for an item
 DELIMITER $$
 DROP PROCEDURE IF EXISTS sell_by_quantity$$
 CREATE PROCEDURE sell_by_quantity( IN _item_id INT(11) , IN _quantity INT(11) , OUT compute_success BOOLEAN )
@@ -69,13 +72,18 @@ BEGIN
 
             SET quantity_sum = quantity_sum + row_quantity;
 
+            -- The logic is to go through rows, summing up there quantities until it equals or exceeds total quantity expected to be sold.
+            -- If at the last stage and only a part of that last row quantity is needed, then reduce the quantity of the last row.
             IF quantity_sum <= _quantity THEN
                 UPDATE items_quantities SET obsolete = TRUE WHERE id = item_quantity_id;
+
+                IF quantity_sum = _quantity THEN
+                    SET compute_success = TRUE;
+                    LEAVE compute_loop;
+                END IF;
             ELSE
                 UPDATE items_quantities SET quantity = quantity_sum - _quantity WHERE id = item_quantity_id;
-
                 SET compute_success = TRUE;
-
                 LEAVE compute_loop;
             END IF;
 

@@ -18,6 +18,7 @@ TestUtils.setupEnvForIntegrationTests().then(()=>{
     // NOTE: this is ugly, util.promisify should allow context to be defined. A better solution is needed.
     .bind(handler);
 
+    // will be used to clear the tables for testing
     const resetDB = async ()=>{
         return queryFunction({
             sql:`
@@ -32,7 +33,7 @@ TestUtils.setupEnvForIntegrationTests().then(()=>{
             sql:`INSERT INTO ${Constants.itemsQuantitiesTableName}(item_id,quantity,expiry)
             VALUES(( SELECT id from ${Constants.itemsTableName} WHERE slug = ? ) , ? , FROM_UNIXTIME(? * 0.001) )`,
             values:[defaultTestSlug,quantity , expiry],
-        })
+        });
     };
 
     describe('test items api endpoint',()=>{
@@ -102,6 +103,7 @@ TestUtils.setupEnvForIntegrationTests().then(()=>{
                 await resetDB();
             });
 
+            // in simple case, the validity of the return values in the focus
             it('should respond with status 200 and valid result in a simple case',async ()=>{
 
                 const now = Date.now();
@@ -121,6 +123,8 @@ TestUtils.setupEnvForIntegrationTests().then(()=>{
                 });
             });
 
+            // in average case, the focus is to check if the system returns the sum of all( with different expiry ) available quantity of items and 
+            // also returns the least expiry time
             it('should respond with status 200 and valid result in an average case',async ()=>{
 
                 const now = Date.now();
@@ -140,6 +144,7 @@ TestUtils.setupEnvForIntegrationTests().then(()=>{
                 });
             });
 
+            // in expreme case, the focus is to test if the system wont regard a quantity of items that has expired
             it('should respond with status 200 and valid result in an extreme case',async ()=>{
 
                 const now = Date.now();
@@ -155,7 +160,7 @@ TestUtils.setupEnvForIntegrationTests().then(()=>{
                 await addItem( 3 , now + midTimeDelta);
                 await addItem( 5 , now + lastTimeDelta);
 
-                // delay for {timeDelta} milliseconds
+                // delay for {timeDelta} milliseconds, to allow items to expire
                 await new Promise( resolve => setTimeout(resolve,timeDelta) );
 
                 return chai.request(app)

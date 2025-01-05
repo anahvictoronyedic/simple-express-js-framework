@@ -15,7 +15,9 @@
     "start": "node .",
     "unit:test": "mocha --recursive -r ts-node/register \"src/app/**/*.spec.ts\"",
     "integration:test": "mocha --recursive -r ts-node/register \"src/integration-tests/**/*.spec.ts\"",
-    "test": "npm-run-all unit:test integration:test"
+    "test": "npm-run-all unit:test integration:test",
+    "app:script:add-item":"ts-node ./src/app/scripts/add-item.ts",
+    "app:script:items-purger":"ts-node ./src/app/scripts/items-purger.ts"
   },
   "keywords": [],
   "author": "",
