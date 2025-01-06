@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS items(
     UNIQUE KEY ( slug ) 
 ) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS items_quantities(
+CREATE TABLE IF NOT EXISTS item_quantities(
     
     id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
     item_id INT(11) UNSIGNED NOT NULL,
@@ -43,7 +43,7 @@ BEGIN
     DECLARE noop BOOLEAN DEFAULT FALSE;
 
     DECLARE sell_row_cur CURSOR FOR
-        SELECT id,quantity FROM items_quantities WHERE item_id = _item_id AND expiry > CURRENT_TIMESTAMP AND obsolete = FALSE ORDER BY expiry ASC FOR UPDATE;
+        SELECT id,quantity FROM item_quantities WHERE item_id = _item_id AND expiry > CURRENT_TIMESTAMP AND obsolete = FALSE ORDER BY expiry ASC FOR UPDATE;
 
     DECLARE EXIT HANDLER FOR SQLEXCEPTION, SQLWARNING
         BEGIN
@@ -75,14 +75,14 @@ BEGIN
             -- The logic is to go through rows, summing up there quantities until it equals or exceeds total quantity expected to be sold.
             -- If at the last stage and only a part of that last row quantity is needed, then reduce the quantity of the last row.
             IF quantity_sum <= _quantity THEN
-                UPDATE items_quantities SET obsolete = TRUE WHERE id = item_quantity_id;
+                UPDATE item_quantities SET obsolete = TRUE WHERE id = item_quantity_id;
 
                 IF quantity_sum = _quantity THEN
                     SET compute_success = TRUE;
                     LEAVE compute_loop;
                 END IF;
             ELSE
-                UPDATE items_quantities SET quantity = quantity_sum - _quantity WHERE id = item_quantity_id;
+                UPDATE item_quantities SET quantity = quantity_sum - _quantity WHERE id = item_quantity_id;
                 SET compute_success = TRUE;
                 LEAVE compute_loop;
             END IF;
