@@ -45,8 +45,8 @@ export default class ItemsModel implements Model<any>{
             return Promise.reject( {reason:'error' , err} );
         }).then((results:any)=>{
 
-            if(results.length > 0 
-                
+            if(results.length > 0
+
                 // this expression uses mysql representation of true and false, which is 1 and 0 respectively.
                 && results[results.length-1][0][mySqlResultVariableName] == 1){
 

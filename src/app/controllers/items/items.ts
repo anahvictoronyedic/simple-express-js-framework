@@ -23,11 +23,11 @@ export default class ItemsController implements Controller<any>{
     }
 
     /**
-     * 
+     *
      * @param router The express router to register endpoints and middlewares
      */
     async registerEndpoints(router: Router): Promise<void> {
-        
+
         const slugValidatorMiddleware = await Defense.createMiddlewareForJoiValidation( Joi.object({
             slug:Joi.string().required().regex(Constants.SLUG_REGEX),
         }) , 'params' );

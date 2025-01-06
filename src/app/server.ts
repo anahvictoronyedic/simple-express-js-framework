@@ -18,7 +18,7 @@ app.use(cors());
 Load the bootstrap program. Use concrete option to indicate the application will utilize as much resources available.
 */
 bootstrap('concrete').then(()=>{
-        
+
     // set up controllers
     CoreRoutines.registerControllersThroughFolderNames( app ,{controller: process.env.APP_CONTROLLERS_PATH,model:process.env.APP_MODELS_PATH} ).then(()=>{
         /*
