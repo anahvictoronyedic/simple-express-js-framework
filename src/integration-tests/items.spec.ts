@@ -149,8 +149,8 @@ TestUtils.setupEnvForIntegrationTests().then(()=>{
 
                 const now = Date.now();
 
-                const timeDelta = 5000 ;
-                const midTimeDelta = timeDelta + 10000 ;
+                const timeDelta = 5000;
+                const midTimeDelta = timeDelta + 10000;
                 const lastTimeDelta = timeDelta + 8000;
 
                 /**
@@ -160,8 +160,11 @@ TestUtils.setupEnvForIntegrationTests().then(()=>{
                 await addItem( 3 , now + midTimeDelta);
                 await addItem( 5 , now + lastTimeDelta);
 
+                // tolerance to cater for fluctuations in expected latency
+                const delayTolerance = 1000;
+
                 // delay for {timeDelta} milliseconds, to allow items to expire
-                await new Promise( resolve => setTimeout(resolve,timeDelta) );
+                await new Promise( resolve => setTimeout(resolve,timeDelta + delayTolerance) );
 
                 return chai.request(app)
                 .get(createUrl('quantity'))
@@ -171,7 +174,6 @@ TestUtils.setupEnvForIntegrationTests().then(()=>{
                     expect(res.body).to.haveOwnProperty('quantity',8);
                     expect(res.body).to.haveOwnProperty('validTill',now + lastTimeDelta);
                 });
-
             })
             // this particular test uses delay, hence tell mocha to give enough time
             .timeout(20000);
