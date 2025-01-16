@@ -9,7 +9,7 @@ export default abstract class Constants{
     static readonly SLUG_REGEX = /^[a-z](-?[a-z])*$/;
 
     static readonly itemsTableName = 'items';
-    static readonly itemsQuantitiesTableName = 'item_quantities';
+    static readonly itemsQuantitiesTableName = 'items_quantities';
 
     /**
      * These keys are for the app object store. They are defined here to make the code DRY, so that when a key
