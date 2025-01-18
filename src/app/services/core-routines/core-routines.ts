@@ -12,7 +12,7 @@ export default class CoreRoutines{
      * @returns The Object
      *
      * This methods makes the code defensive and callers that critically need the object dont need to test if null.
-     * If the object is not in the store and exception is thrown.
+     * If the object is not in the store an exception is thrown.
      */
     public static getObjectSafely<R>( key:string ){
 
