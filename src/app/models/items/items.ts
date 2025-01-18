@@ -102,6 +102,20 @@ export default class ItemsModel implements Model<any>{
         });
     }
 
+    async itemExists( idOrSlug:ID ) :Promise<boolean>{
+
+        const query = `
+        SELECT id FROM ${Constants.itemsTableName} WHERE id = ${this.getIdQueryFragment(idOrSlug)}
+        `;
+
+        return this.queryFunction({
+            sql:query,
+            values:[idOrSlug]
+        }).then((results:any)=>{
+            return results.length > 0;
+        });
+    }
+
     async purgeItems(){
         const query = `
         DELETE FROM ${Constants.itemsQuantitiesTableName}
