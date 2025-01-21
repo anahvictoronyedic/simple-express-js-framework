@@ -1,4 +1,12 @@
 
+# About
+
+This is a web application built with typescript and express.js. It provides an API for perishable inventory.
+
+It is built as a simple framework that is easily and efficiently extensible to accomodate other API endpoints.
+
+This document describes the architecture using the perishable inventory API as the first extension of the framework.
+
 # Design
 
 ## Overview
@@ -46,7 +54,7 @@ Below are the steps to get the server running.
 1) Implement the `.env` file by copying the `.env.sample` file and setting required configuration. For MySql database settings see below.
 2) Make sure `tsc` and `ts-node` are installed globally
 3) `npm run tsc` will compile the application into a `/dist` folder
-4) `node .` will run the `/dist/index.js` 
+4) `node .` will run the `/dist/index.js`
 5) The items endpoints can be accessed by prefixing the url with `/items`. For example to access the sell endpoint use the url `/items/:slug/sell`
 
 # MySql Database
