@@ -3,7 +3,7 @@
 
 ## Overview
 
-The application is designed using MVC architecture. There is a bootstrap file that loads resources that will be used by the application whether in http server mode or command line script mode. 
+The application is designed using MVC architecture. There is a bootstrap file that loads resources that will be used by the application whether in http server mode or command line script mode.
 
 The bootstrap program can be asked to load as much resources available, mostly when starting the app as a http-server or asked to load minimal amount of resources, especially when starting as a commandline script. Below are additional design points of the application.
 
